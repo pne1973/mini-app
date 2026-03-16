@@ -3,24 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earn TON</title>
+    <title>TON Earner</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0f0f0f; color: white; text-align: center; padding: 40px 20px; }
         .card { background: #1a1a1a; border-radius: 20px; padding: 30px; border: 1px solid #333; }
-        .btn { background: linear-gradient(135deg, #0088cc, #005580); color: white; border: none; padding: 18px; border-radius: 15px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .btn:active { transform: scale(0.98); }
-        #status { margin-top: 25px; font-size: 14px; color: #aaa; min-height: 20px; }
-        .loader { color: #0088cc; font-style: italic; }
+        .btn { background: linear-gradient(135deg, #0088cc, #005580); color: white; border: none; padding: 18px; border-radius: 15px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; }
+        #status { margin-top: 25px; font-size: 14px; color: #aaa; }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>💰 Earn TON</h1>
-        <p style="color: #888;">Complete one ad to receive 0.01 TON directly to your balance.</p>
-        <br>
-        <button class="btn" onclick="startAdFlow()">🚀 WATCH AD NOW</button>
-        <div id="status">Ready to earn</div>
+        <p>Watch one ad to get 0.01 TON.</p>
+        <button class="btn" onclick="startAdFlow()">🚀 WATCH AD</button>
+        <div id="status">Ready</div>
     </div>
 
     <script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
@@ -29,57 +26,33 @@
         tg.ready();
         tg.expand();
 
-        const log = (msg, isError = false) => {
-            const el = document.getElementById('status');
-            el.innerText = msg;
-            el.className = isError ? "status error" : "status loader";
-        };
-
         function startAdFlow() {
-            if (typeof TelegramAdsController === 'undefined') {
-                tg.showAlert("Ad SDK failed to load. Please check your connection.");
-                return;
-            }
-
+            const status = document.getElementById('status');
             const controller = new TelegramAdsController();
             controller.initialize({ pubId: "76092", appId: "6584" });
 
-            log("Step 1: Searching for Video Ads...");
-            
-            // Try Rewarded Video First
+            status.innerText = "Searching for video...";
             controller.showAd({
                 type: 'rewarded',
-                onComplete: () => processReward(),
-                onError: (err) => {
-                    console.log("Rewarded failed, trying Interstitial...", err);
-                    tryInterstitial(controller);
-                }
-            });
-        }
-
-        function tryInterstitial(controller) {
-            log("Step 2: Video busy, trying Static Ad...");
-            controller.showAd({
-                type: 'interstitial',
-                onComplete: () => processReward(),
-                onError: (err) => {
-                    log("No ads available right now. Please try in 30 minutes.", true);
-                    tg.showAlert("The ad network is currently out of ads for your region. Try again later!");
-                }
-            });
-        }
-
-        function processReward() {
-            log("✅ Success! Saving reward...");
-            const uid = tg.initDataUnsafe.user.id;
-            // Updated to your specific Render URL
-            fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${uid}`)
-                .then(res => {
-                    tg.showConfirm("0.01 TON Added! Close app?", (ok) => {
-                        if(ok) tg.close();
+                onComplete: () => rewardUser(),
+                onError: () => {
+                    status.innerText = "Video busy, trying static...";
+                    controller.showAd({
+                        type: 'interstitial',
+                        onComplete: () => rewardUser(),
+                        onError: () => {
+                            status.innerText = "No ads right now. Try later!";
+                            tg.showAlert("No ads available in your region yet.");
+                        }
                     });
-                })
-                .catch(e => tg.showAlert("Server Error. Don't worry, balance will update soon."));
+                }
+            });
+        }
+
+        function rewardUser() {
+            const uid = tg.initDataUnsafe.user.id;
+            fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${uid}`)
+                .then(() => tg.showAlert("Reward Saved! Check your balance in the bot."));
         }
     </script>
 </body>
