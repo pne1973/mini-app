@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earn TON Bot</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <script src="https://richads-sdk-link.js"></script> 
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1c1c1c;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        h1 { font-size: 24px; margin-bottom: 10px; }
+        p { color: #aaaaaa; margin-bottom: 30px; }
+        .btn {
+            background-color: #3390ec;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(51, 144, 236, 0.3);
+        }
+        .btn:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+
+    <h1>💰 Earn TON</h1>
+    <p>Watch a 15-second ad to get 0.01 TON</p>
+    
+    <button class="btn" onclick="showAd()">Watch Ad Now</button>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand(); // Opens the app in full-screen mode
+
+        function showAd() {
+            // Check if RichAds is loaded
+            if (typeof RichAds !== 'undefined') {
+                RichAds.show({
+                    format: 'interstitial',
+                    onSuccess: function() {
+                        // This sends the reward to your Render server
+                        const userId = tg.initDataUnsafe.user.id;
+                        
+                        // REPLACE THIS URL with your actual Render URL
+                        fetch(`https://your-bot-name.onrender.com/reward?user_id=${userId}`)
+                            .then(response => {
+                                tg.showAlert("Success! Your balance was updated.");
+                                tg.close(); // Close the app after reward
+                            })
+                            .catch(err => {
+                                tg.showAlert("Server Error. Please try again later.");
+                            });
+                    },
+                    onFail: function() {
+                        tg.showAlert("No ads available. Try again in 5 minutes.");
+                    }
+                });
+            } else {
+                tg.showAlert("Ad blocker detected or script failed to load.");
+            }
+        }
+    </script>
+</body>
+</html>
