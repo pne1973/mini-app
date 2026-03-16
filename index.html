@@ -4,90 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Earn TON</title>
-    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
     <script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
-    <script>
-        window.TelegramAdsController = new TelegramAdsController();
-        window.TelegramAdsController.initialize({
-            pubId: "76092",
-            appId: "6584",
-        });
-    </script>
-
     <style>
-        body {
-            font-family: sans-serif;
-            background-color: #121212;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .btn {
-            background: #0088cc;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-size: 20px;
-            cursor: pointer;
-        }
-        .status { margin-top: 20px; color: #888; }
+        body { font-family: sans-serif; background: #121212; color: white; text-align: center; padding-top: 50px; }
+        .btn { background: #0088cc; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+        .status { margin-top: 20px; color: #888; font-size: 14px; }
     </style>
 </head>
 <body>
-
     <h1>💰 Earn TON</h1>
-    <p>Watch the full ad to claim 0.01 TON</p>
-    
-    <button class="btn" onclick="playAd()">🚀 Watch Ad Now</button>
-    <div id="status" class="status">Ready</div>
+    <button class="btn" id="adBtn" onclick="playAd()">🚀 Watch Ad Now</button>
+    <div id="status" class="status">Initializing SDK...</div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready();
 
-        function playAd() {
-            document.getElementById('status').innerText = "Loading ad...";
+        // 1. Precise Initialization
+        const adsController = new TelegramAdsController();
+        adsController.initialize({
+            pubId: "76092",
+            appId: "6584",
+        }).then(() => {
+            document.getElementById('status').innerText = "SDK Ready ✅";
+        }).catch((err) => {
+            document.getElementById('status').innerText = "SDK Failed: " + JSON.stringify(err);
+        });
 
-            // Trigger the RichAds Interstitial/Rewarded ad
-            window.TelegramAdsController.showAd({
-                type: 'rewarded', // or 'rewarded' depending on your RichAds setup
+        function playAd() {
+            document.getElementById('status').innerText = "Requesting Ad...";
+            
+            adsController.showAd({
+                type: 'rewarded', // Using rewarded for better fill rates
                 onComplete: () => {
-                    document.getElementById('status').innerText = "Ad finished! Saving reward...";
+                    document.getElementById('status').innerText = "Completed! Sending reward...";
                     rewardUser();
                 },
                 onSkipped: () => {
-                    tg.showAlert("You skipped the ad! No reward granted.");
-                    document.getElementById('status').innerText = "Skipped.";
+                    tg.showAlert("Ad skipped - no reward.");
                 },
                 onError: (err) => {
-                    tg.showAlert("No ads available right now. Try later!");
-                    console.error(err);
+                    // This is the most important part - it will show the REAL error
+                    console.error("Ad Error:", err);
+                    tg.showAlert("Ad Error: " + (err.message || "No Fill / No Ads Available"));
+                    document.getElementById('status').innerText = "Error: " + JSON.stringify(err);
                 }
             });
         }
 
         function rewardUser() {
             const userId = tg.initDataUnsafe.user.id;
-            
-            // !!! REPLACE THIS URL with your actual Render URL !!!
-            const renderUrl = `https://telegramadsbot-jzso.onrender.com/reward?user_id=${userId}`;
-
-            fetch(renderUrl)
-                .then(res => {
-                    tg.showConfirm("Success! 0.01 TON added to your balance.", () => {
-                        tg.close(); // Close app and return to chat
-                    });
-                })
-                .catch(err => {
-                    tg.showAlert("Server busy. Reward will be added soon!");
-                });
+            const url = `https://telegramadsbot-jzso.onrender.com/reward?user_id=${userId}`;
+            fetch(url).then(() => tg.showAlert("0.01 TON added!"));
         }
     </script>
 </body>
