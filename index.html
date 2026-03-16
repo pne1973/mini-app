@@ -6,74 +6,46 @@
     <title>TON Pro Earner</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a0a; color: white; text-align: center; padding: 20px; margin: 0; }
-        .card { background: #161616; border-radius: 28px; padding: 40px 20px; border: 1px solid #222; box-shadow: 0 15px 35px rgba(0,0,0,0.7); max-width: 400px; margin: 20px auto; }
-        .btn { background: linear-gradient(135deg, #00b4d8, #0077b6); color: white; border: none; padding: 20px; border-radius: 18px; width: 100%; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        .btn:disabled { background: #333; cursor: not-allowed; opacity: 0.6; }
-        .bonus-btn { background: linear-gradient(135deg, #f7931a, #ffab40); margin-bottom: 15px; }
-        #status { margin-top: 30px; color: #666; font-size: 14px; }
-        .stats { display: flex; justify-content: space-around; margin-bottom: 20px; font-size: 12px; color: #00b4d8; font-weight: bold; }
+        body { font-family: sans-serif; background: #0a0a0a; color: white; text-align: center; padding: 20px; }
+        .card { background: #161616; border-radius: 20px; padding: 30px; border: 1px solid #333; max-width: 350px; margin: auto; }
+        .btn { background: #00b4d8; color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        .bonus { background: #f7931a; }
+        #status { font-size: 12px; color: #666; margin-top: 15px; }
     </style>
 </head>
 <body>
     <div class="card">
-        <div class="stats"><span>NETWORK: TON</span><span>STATUS: LIVE 🟢</span></div>
-        <div style="font-size: 60px; margin-bottom: 10px;">💎</div>
-        <h1>TON Pro Earner</h1>
-        <p style="color: #999;">Watch ads to earn or claim your daily gift.</p>
-        
-        <button class="btn bonus-btn" id="bonusBtn" onclick="claimDaily()">🎁 CLAIM DAILY BONUS</button>
-        <button class="btn" id="mainBtn" onclick="startAdFlow()">🚀 WATCH AD (+0.01 TON)</button>
-        
-        <div id="status">Ready to earn</div>
+        <h1>💎 TON Earner</h1>
+        <p>Earn TON by watching ads!</p>
+        <button class="btn bonus" onclick="claimDaily()">🎁 CLAIM DAILY BONUS</button>
+        <button class="btn" onclick="startAdFlow()">🚀 WATCH VIDEO (+0.001 TON)</button>
+        <div id="status">Ready</div>
     </div>
 
     <script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
-        tg.ready(); tg.expand();
-        const apiBase = "https://telegramadsbot-jzso.onrender.com";
+        tg.expand();
+        // CHANGE THIS TO YOUR ACTUAL RENDER LINK
+        const API_URL = "https://telegramadsbot-jzso.onrender.com";
 
         function claimDaily() {
-            const uid = tg.initDataUnsafe.user.id;
-            fetch(`${apiBase}/daily?user_id=${uid}`)
-                .then(r => r.status === 200 ? tg.showAlert("🎁 Bonus Claimed!") : tg.showAlert("⏳ Come back tomorrow!"))
-                .catch(() => tg.showAlert("Error connecting to server."));
+            fetch(`${API_URL}/daily?user_id=${tg.initDataUnsafe.user.id}`)
+                .then(r => r.ok ? tg.showAlert("Bonus Claimed!") : tg.showAlert("Wait 24h!"));
         }
 
         function startAdFlow() {
-            const btn = document.getElementById('mainBtn');
-            const status = document.getElementById('status');
-            btn.disabled = true;
-            
             const controller = new TelegramAdsController();
             controller.initialize({ pubId: "76092", appId: "6584" });
-
-            status.innerText = "Loading Ad...";
             controller.showAd({
                 type: 'rewarded',
-                onComplete: () => finalizeReward(),
-                onError: () => {
-                    controller.showAd({
-                        type: 'interstitial',
-                        onComplete: () => finalizeReward(),
-                        onError: () => {
-                            tg.showAlert("No ads found. Try again in 60s.");
-                            btn.disabled = false;
-                        }
-                    });
-                }
+                onComplete: () => {
+                    const v = Math.floor(Date.now() / 1000);
+                    fetch(`${API_URL}/reward?user_id=${tg.initDataUnsafe.user.id}&verify=${v}`)
+                        .then(() => tg.showAlert("Success! Reward added."));
+                },
+                onError: () => tg.showAlert("No ads. Try later.")
             });
-        }
-
-        function finalizeReward() {
-            const uid = tg.initDataUnsafe.user.id;
-            const salt = Math.floor(Date.now() / 1000); 
-            fetch(`${apiBase}/reward?user_id=${uid}&verify=${salt}`)
-                .then(() => {
-                    tg.showAlert("✅ Success! Reward credited.");
-                    location.reload();
-                });
         }
     </script>
 </body>
