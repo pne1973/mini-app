@@ -3,35 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TON Pro Earner</title>
+    <title>TON Earner Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background: #0a0a0a; color: white; text-align: center; padding: 20px; }
         .card { background: #161616; border-radius: 20px; padding: 30px; border: 1px solid #333; max-width: 350px; margin: auto; }
-        .btn { background: #00b4d8; color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        .btn { background: #00b4d8; color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.3s; }
+        .btn:active { transform: scale(0.98); }
         .bonus { background: #f7931a; }
         #status { font-size: 12px; color: #666; margin-top: 15px; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>💎 TON Earner</h1>
-        <p>Earn TON by watching ads!</p>
+        <div style="font-size: 50px;">💰</div>
+        <h1>Earn TON</h1>
+        <p>Watch ads to get 0.001 TON.</p>
         <button class="btn bonus" onclick="claimDaily()">🎁 CLAIM DAILY BONUS</button>
-        <button class="btn" onclick="startAdFlow()">🚀 WATCH VIDEO (+0.001 TON)</button>
-        <div id="status">Ready</div>
+        <button class="btn" onclick="startAdFlow()">🚀 WATCH AD</button>
+        <div id="status">Ready to earn</div>
     </div>
 
     <script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
+        tg.ready();
         tg.expand();
-        // CHANGE THIS TO YOUR ACTUAL RENDER LINK
+
         const API_URL = "https://telegramadsbot-jzso.onrender.com";
 
         function claimDaily() {
             fetch(`${API_URL}/daily?user_id=${tg.initDataUnsafe.user.id}`)
-                .then(r => r.ok ? tg.showAlert("Bonus Claimed!") : tg.showAlert("Wait 24h!"));
+                .then(r => r.ok ? tg.showAlert("✅ Bonus Claimed!") : tg.showAlert("⏳ Come back in 24h!"));
         }
 
         function startAdFlow() {
@@ -42,9 +45,9 @@
                 onComplete: () => {
                     const v = Math.floor(Date.now() / 1000);
                     fetch(`${API_URL}/reward?user_id=${tg.initDataUnsafe.user.id}&verify=${v}`)
-                        .then(() => tg.showAlert("Success! Reward added."));
+                        .then(() => tg.showAlert("💎 Success! Reward added."));
                 },
-                onError: () => tg.showAlert("No ads. Try later.")
+                onError: () => tg.showAlert("No ads available. Try later.")
             });
         }
     </script>
