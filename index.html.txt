@@ -3,15 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earn TON Bot</title>
+    <title>Earn TON</title>
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <script src="https://richads-sdk-link.js"></script> 
+    <script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
+    <script>
+        window.TelegramAdsController = new TelegramAdsController();
+        window.TelegramAdsController.initialize({
+            pubId: "76092",
+            appId: "6584",
+        });
+    </script>
 
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #1c1c1c;
+            font-family: sans-serif;
+            background-color: #121212;
             color: white;
             display: flex;
             flex-direction: column;
@@ -19,62 +27,67 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-            text-align: center;
         }
-        h1 { font-size: 24px; margin-bottom: 10px; }
-        p { color: #aaaaaa; margin-bottom: 30px; }
         .btn {
-            background-color: #3390ec;
+            background: #0088cc;
             color: white;
             border: none;
-            padding: 15px 40px;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: bold;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 20px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(51, 144, 236, 0.3);
         }
-        .btn:active { transform: scale(0.98); }
+        .status { margin-top: 20px; color: #888; }
     </style>
 </head>
 <body>
 
     <h1>💰 Earn TON</h1>
-    <p>Watch a 15-second ad to get 0.01 TON</p>
+    <p>Watch the full ad to claim 0.01 TON</p>
     
-    <button class="btn" onclick="showAd()">Watch Ad Now</button>
+    <button class="btn" onclick="playAd()">🚀 Watch Ad Now</button>
+    <div id="status" class="status">Ready</div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready();
-        tg.expand(); // Opens the app in full-screen mode
 
-        function showAd() {
-            // Check if RichAds is loaded
-            if (typeof RichAds !== 'undefined') {
-                RichAds.show({
-                    format: 'interstitial',
-                    onSuccess: function() {
-                        // This sends the reward to your Render server
-                        const userId = tg.initDataUnsafe.user.id;
-                        
-                        // REPLACE THIS URL with your actual Render URL
-                        fetch(`https://your-bot-name.onrender.com/reward?user_id=${userId}`)
-                            .then(response => {
-                                tg.showAlert("Success! Your balance was updated.");
-                                tg.close(); // Close the app after reward
-                            })
-                            .catch(err => {
-                                tg.showAlert("Server Error. Please try again later.");
-                            });
-                    },
-                    onFail: function() {
-                        tg.showAlert("No ads available. Try again in 5 minutes.");
-                    }
+        function playAd() {
+            document.getElementById('status').innerText = "Loading ad...";
+
+            // Trigger the RichAds Interstitial/Rewarded ad
+            window.TelegramAdsController.showAd({
+                type: 'interstitial', // or 'rewarded' depending on your RichAds setup
+                onComplete: () => {
+                    document.getElementById('status').innerText = "Ad finished! Saving reward...";
+                    rewardUser();
+                },
+                onSkipped: () => {
+                    tg.showAlert("You skipped the ad! No reward granted.");
+                    document.getElementById('status').innerText = "Skipped.";
+                },
+                onError: (err) => {
+                    tg.showAlert("No ads available right now. Try later!");
+                    console.error(err);
+                }
+            });
+        }
+
+        function rewardUser() {
+            const userId = tg.initDataUnsafe.user.id;
+            
+            // !!! REPLACE THIS URL with your actual Render URL !!!
+            const renderUrl = `https://telegramadsbot-jzso.onrender.com/reward?user_id=${userId}`;
+
+            fetch(renderUrl)
+                .then(res => {
+                    tg.showConfirm("Success! 0.01 TON added to your balance.", () => {
+                        tg.close(); // Close app and return to chat
+                    });
+                })
+                .catch(err => {
+                    tg.showAlert("Server busy. Reward will be added soon!");
                 });
-            } else {
-                tg.showAlert("Ad blocker detected or script failed to load.");
-            }
         }
     </script>
 </body>
