@@ -57,7 +57,7 @@
 
             // Trigger the RichAds Interstitial/Rewarded ad
             window.TelegramAdsController.showAd({
-                type: 'interstitial', // or 'rewarded' depending on your RichAds setup
+                type: 'rewarded', // or 'rewarded' depending on your RichAds setup
                 onComplete: () => {
                     document.getElementById('status').innerText = "Ad finished! Saving reward...";
                     rewardUser();
