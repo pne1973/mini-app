@@ -1,31 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TON Earner Pro</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root { --primary: #00b4d8; --bg: #0a0a0a; --card: #161616; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; text-align: center; padding: 20px; margin: 0; }
-        .card { background: var(--card); border-radius: 24px; padding: 30px 20px; border: 1px solid #333; max-width: 360px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .btn { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 14px; width: 100%; font-size: 17px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-bottom: 12px; }
-        .btn:active { transform: scale(0.98); opacity: 0.9; }
-        .btn:disabled { background: #444; cursor: not-allowed; }
-        .btn-bonus { background: #f7931a; }
-        #status { font-size: 13px; color: #888; margin-top: 15px; font-style: italic; }
-        .icon { font-size: 50px; margin-bottom: 10px; }
-    </style>
-</head>
-<body>
+<script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
 
-    <div class="card">
-        <div class="icon">💎</div>
-        <h1>TON Earner</h1>
-        <p style="color: #bbb; font-size: 14px;">Watch ads to earn real TON tokens.</p>
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+
+    // Initialize the Controller with your specific IDs
+    const controller = new TelegramAdsController();
+    controller.initialize({
+        pubId: "76092",
+        appId: "6586", // Your updated ID
+    });
+
+    function startAdFlow() {
+        const btn = document.getElementById('adBtn');
+        const status = document.getElementById('status');
         
-        <button class="btn btn-bonus" id="bonusBtn" onclick="claimDaily()">🎁 CLAIM DAILY BONUS</button>
-        <button class="btn" id="adBtn" onclick="startAdFlow()">🚀 WATCH AD (+0.001 TON)</button>
-        
-        <div id="status">Initializing Secure Ad Network...</div>
-    </div>
+        btn.disabled = true;
+        status.innerText = "Loading Ad...";
+
+        controller.showAd({
+            type: 'rewarded', // Tries the Video Ad first
+            onComplete: () => {
+                status.innerText = "Success! Verifying...";
+                finalizeReward();
+                btn.disabled = false;
+            },
+            onError: (err) => {
+                console.log("Video failed, trying Popup fallback...");
+                // Emergency Fallback: Popup ads almost always work!
+                controller.showAd({ 
+                    type: 'pop', 
+                    onComplete: () => {
+                        finalizeReward();
+                        btn.disabled = false;
+                    } 
+                });
+            }
+        });
+    }
+
+    function finalizeReward() {
+        const uid = tg.initDataUnsafe.user.id;
+        // Connects to your Render server
+        fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${uid}`)
+            .then(r => {
+                if(r.ok) {
+                    tg.showAlert("💰 +0.001 TON added to your balance!");
+                    document.getElementById('status').innerText = "Ready for next ad";
+                }
+            })
+            .catch(() => tg.showAlert("Server error. But don't worry, we'll try to sync later."));
+    }
+</script>
+
+<button id="adBtn" class="btn" onclick="startAdFlow()">🚀 WATCH AD</button>
+<div id="status">Ready</div>
