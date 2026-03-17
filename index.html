@@ -1,43 +1,69 @@
-<script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Crypto Earner Bot</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #222);
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 80vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 { font-size: 24px; margin-bottom: 10px; }
+        p { font-size: 16px; color: #777; margin-bottom: 30px; }
+        .btn {
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            padding: 18px 0;
+            width: 90%;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.1s ease;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        #status { margin-top: 15px; font-size: 14px; font-weight: 500; }
+    </style>
+</head>
+<body>
 
-    function startAdFlow() {
-        const btn = document.getElementById('adBtn');
-        btn.innerText = "Loading Ad...";
-        btn.disabled = true;
+    <div class="container">
+        <h1>💎 Crypto Earner</h1>
+        <p>Watch a short ad to earn 0.001 TON</p>
 
-        // Your Adsterra SmartLink
-        const adUrl = "https://www.effectivegatecpm.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
+        <button id="adBtn" class="btn" onclick="startAdFlow()">💰 EARN TON</button>
+        <div id="status"></div>
+    </div>
 
-        // 1. Open the Ad
-        tg.openLink(adUrl);
+    <script>
+        // Initialize Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
 
-        // 2. Reward the user via your Render backend
-        const userId = tg.initDataUnsafe.user?.id || "test_user";
-        
-        fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${userId}`)
-            .then(response => {
-                if(response.ok) {
-                    tg.showAlert("💰 Success! +0.001 TON added to your balance.");
-                } else {
-                    tg.showAlert("⚠️ Ad opened, but reward server is busy. Try again!");
-                }
-                btn.innerText = "💰 EARN TON";
-                btn.disabled = false;
-            })
-            .catch(err => {
-                console.error(err);
-                tg.showAlert("Connect error. Check your internet!");
-                btn.innerText = "💰 EARN TON";
-                btn.disabled = false;
-            });
-    }
-</script>
-
-<div style="text-align: center; margin-top: 50px;">
-    <button id="adBtn" onclick="startAdFlow()" style="padding: 20px 40px; font-size: 20px; background: #0088cc; color: white; border: none; border-radius: 10px; cursor: pointer; width: 80%;">
-        💰 EARN TON
-    </button>
-</div>
+        function startAdFlow() {
+            const btn = document.getElementById('adBtn');
+            const status = document.getElementById('status');
+            
+            // 1. UI Updates
+            btn.disabled = true;
+            btn.innerText = "Opening Ad...";
+            status.innerText = "Please
