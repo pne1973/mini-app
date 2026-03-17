@@ -1,69 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Crypto Earner Bot</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #222);
-            text-align: center;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 80vh;
-        }
-        .container {
-            width: 100%;
-            max-width: 400px;
-        }
-        h1 { font-size: 24px; margin-bottom: 10px; }
-        p { font-size: 16px; color: #777; margin-bottom: 30px; }
-        .btn {
-            background-color: #0088cc;
-            color: white;
-            border: none;
-            padding: 18px 0;
-            width: 90%;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 12px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            transition: transform 0.1s ease;
-        }
-        .btn:active { transform: scale(0.98); }
-        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
-        #status { margin-top: 15px; font-size: 14px; font-weight: 500; }
-    </style>
-</head>
-<body>
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
 
-    <div class="container">
-        <h1>💎 Crypto Earner</h1>
-        <p>Watch a short ad to earn 0.001 TON</p>
+    function startAdFlow() {
+        const adUrl = "https://www.effectivegatecpm.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
+        
+        // Use the official Telegram Popup - this is impossible to block!
+        tg.showConfirm("To earn 0.001 TON, you must view the sponsor page. Open now?", (confirmed) => {
+            if (confirmed) {
+                // This method is the most reliable in 2026
+                tg.openLink(adUrl);
 
-        <button id="adBtn" class="btn" onclick="startAdFlow()">💰 EARN TON</button>
-        <div id="status"></div>
-    </div>
-
-    <script>
-        // Initialize Telegram WebApp
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-
-        function startAdFlow() {
-            const btn = document.getElementById('adBtn');
-            const status = document.getElementById('status');
-            
-            // 1. UI Updates
-            btn.disabled = true;
-            btn.innerText = "Opening Ad...";
-            status.innerText = "Please
+                // Start reward process
+                document.getElementById('status').innerText = "Processing reward...";
+                
+                setTimeout(() => {
+                    fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${tg.initDataUnsafe.user.id}`)
+                        .then(() => {
+                            tg.showAlert("✅ Success! Your balance has been updated.");
+                            document.getElementById('status').innerText = "";
+                        });
+                }, 3000);
+            }
+        });
+    }
+</script>
