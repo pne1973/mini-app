@@ -1,54 +1,39 @@
 <script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
-
 <script>
-    // Global controller instance
-    let richAds;
-
-    // Initialize when Telegram is ready
-    window.Telegram.WebApp.ready();
-
-    function initRichAds() {
-        try {
-            richAds = new TelegramAdsController();
-            richAds.initialize({
-                pubId: "76092",
-                appId: "6586"
-            });
-            console.log("Rich Ads Initialized");
-        } catch (err) {
-            console.error("SDK Load Failed:", err);
-        }
-    }
-
-    // Call init immediately
-    initRichAds();
+    const tg = window.Telegram.WebApp;
+    tg.ready();
 
     function startAdFlow() {
-        if (!richAds) {
-            initRichAds(); // Re-try if it didn't load
+        alert("Phase 1: Button Clicked"); // DEBUG ALERT
+        const btn = document.getElementById('adBtn');
+        btn.disabled = true;
+
+        try {
+            const controller = new TelegramAdsController();
+            alert("Phase 2: Controller Created"); // DEBUG ALERT
+            
+            controller.initialize({
+                pubId: "76092",
+                appId: "6586",
+            });
+
+            controller.showAd({
+                type: 'rewarded',
+                onComplete: () => {
+                    alert("Phase 3: Ad Finished!"); // DEBUG ALERT
+                    finalizeReward();
+                    btn.disabled = false;
+                },
+                onError: (err) => {
+                    alert("Ad Network Error: " + JSON.stringify(err));
+                    // Try the more reliable 'pop' format if video fails
+                    controller.showAd({ type: 'pop', onComplete: () => finalizeReward() });
+                    btn.disabled = false;
+                }
+            });
+        } catch (e) {
+            alert("System Error: " + e.message);
+            btn.disabled = false;
         }
-
-        const status = document.getElementById('status');
-        status.innerText = "fetching high-cpm ad...";
-
-        richAds.showAd({
-            type: 'rewarded', // Video format
-            onComplete: () => {
-                status.innerText = "Ad complete! Rewarding...";
-                // Your backend reward logic
-                fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${window.Telegram.WebApp.initDataUnsafe.user.id}`)
-                    .then(() => window.Telegram.WebApp.showAlert("💎 0.001 TON Earned!"));
-            },
-            onError: (error) => {
-                console.log("RichAds Video Error:", error);
-                // FALLBACK: If video fails, RichAds 'pop' format is very reliable
-                richAds.showAd({ 
-                    type: 'pop', 
-                    onComplete: () => {
-                         window.Telegram.WebApp.showAlert("Bonus: 0.0005 TON for popup ad!");
-                    }
-                });
-            }
-        });
     }
 </script>
