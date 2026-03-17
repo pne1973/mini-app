@@ -3,69 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Earner</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px 20px; background: #f4f4f9; }
-        .earn-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .ad-link {
-            display: inline-block;
-            background-color: #0088cc;
+        body { font-family: sans-serif; text-align: center; padding: 40px 20px; background: #0e1621; color: white; }
+        .card { background: #17212b; padding: 30px; border-radius: 20px; border: 1px solid #242f3d; }
+        .ad-button {
+            display: block;
+            background: #0088cc;
             color: white;
-            padding: 20px 40px;
+            padding: 20px;
             text-decoration: none;
-            font-size: 20px;
+            border-radius: 12px;
             font-weight: bold;
-            border-radius: 15px;
-            margin-top: 20px;
+            margin: 20px 0;
+            font-size: 18px;
         }
-        #claimBtn {
-            margin-top: 20px;
+        #claim {
             background: #28a745;
-            color: white;
             border: none;
-            padding: 15px 30px;
+            color: white;
+            padding: 15px 40px;
             border-radius: 10px;
-            display: none; /* Hidden until they click the ad */
+            font-weight: bold;
+            display: none; /* Hidden at start */
         }
     </style>
 </head>
 <body>
 
-    <div class="earn-card">
-        <h2>💰 Crypto Earner</h2>
-        <p>Step 1: Click the blue button below.<br>Step 2: Return here to claim your TON.</p>
-        
+    <div class="card">
+        <h1>💎 Crypto Earner</h1>
+        <p>1. Tap the button to view ad<br>2. Come back and claim reward</p>
+
         <a href="https://www.effectivegatecpm.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af" 
            target="_blank" 
-           class="ad-link" 
-           onclick="showClaimButton()">
-           📺 VIEW AD
+           class="ad-button" 
+           onclick="document.getElementById('claim').style.display='inline-block'">
+           🚀 VIEW AD & EARN
         </a>
 
         <br>
-        <button id="claimBtn" onclick="claimReward()">🎁 CLAIM 0.001 TON</button>
+        <button id="claim" onclick="sendReward()">🎁 CLAIM 0.001 TON</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready();
+        tg.expand();
 
-        function showClaimButton() {
-            // Show the green claim button after they click the ad
-            document.getElementById('claimBtn').style.display = 'inline-block';
-        }
-
-        function claimReward() {
-            const userId = tg.initDataUnsafe.user?.id || "user";
-            
-            fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${userId}`)
+        function sendReward() {
+            const uid = tg.initDataUnsafe.user?.id || "user";
+            fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${uid}`)
                 .then(() => {
-                    tg.showAlert("✅ Reward Sent! Check your balance in the bot.");
-                    tg.close(); // Close the app after success
+                    tg.showAlert("✅ 0.001 TON Added!");
+                    document.getElementById('claim').style.display='none';
                 })
-                .catch(() => {
-                    tg.showAlert("Server busy. Try again in 1 minute!");
-                });
+                .catch(() => tg.showAlert("Server is waking up... try once more!"));
         }
     </script>
 </body>
