@@ -1,40 +1,138 @@
-<style>
-    .history-item {
-        display: flex; justify-content: space-between; align-items: center;
-        background: rgba(255,255,255,0.03); padding: 12px;
-        border-radius: 12px; margin-top: 8px; font-size: 13px;
-    }
-    .status-pending { color: #ffaa00; font-weight: bold; }
-    .status-paid { color: #28a745; font-weight: bold; }
-</style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root { --bg: #0b0f14; --card: #1c222b; --blue: #0088cc; --green: #28a745; --text-dim: #818d99; }
+        body { background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
+        .glass-card { background: var(--card); padding: 25px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 16px; }
+        .tab { flex: 1; padding: 12px; border-radius: 12px; background: transparent; border: none; color: var(--text-dim); font-weight: bold; cursor: pointer; }
+        .tab.active { background: var(--blue); color: #fff; }
+        .btn { display: block; width: 100%; padding: 18px; border-radius: 16px; font-weight: bold; border: none; cursor: pointer; font-size: 16px; transition: 0.2s; margin-bottom: 10px; text-decoration: none; text-align: center; }
+        .btn-blue { background: var(--blue); color: #fff; }
+        .btn-green { background: var(--green); color: #fff; display: none; }
+        .btn-support { background: transparent; color: var(--blue); border: 1px solid var(--blue); }
+        input { width: 90%; padding: 16px; border-radius: 12px; border: 1px solid #2d3846; background: #000; color: #fff; margin-bottom: 15px; text-align: center; }
+        .stat-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .history-item { display: flex; justify-content: space-between; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; margin-top: 8px; font-size: 13px; }
+        .status-pending { color: #ffaa00; }
+        .status-paid { color: #28a745; }
+    </style>
+</head>
+<body>
 
-<div id="payoutHistory" style="margin-top: 25px; text-align: left;">
-    <div class="stat-label" style="margin-bottom: 10px;">Recent Payouts</div>
-    <div id="historyList">
-        <p style="font-size: 11px; color: #505b67;">No transactions yet.</p>
+    <div class="glass-card">
+        <div class="stat-label">Available Balance</div>
+        <div style="font-size: 38px; font-weight: 800; margin: 10px 0;" id="balText">0.0000 TON</div>
+        <div style="display: flex; justify-content: space-around; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+            <div><div class="stat-label">Daily Limit</div><div id="taskText">0/15</div></div>
+            <div><div class="stat-label">Referrals</div><div id="refText">0</div></div>
+        </div>
     </div>
-</div>
 
-<script>
-    // Update your syncData() function to include this:
-    function syncData() {
-        const sp = tg.initDataUnsafe.start_param || "";
-        fetch(`${BASE_URL}/get_user_info?user_id=${tg.initDataUnsafe.user.id}&ref_by=${sp}`)
-            .then(r => r.json()).then(d => {
-                document.getElementById('balText').innerText = d.bal.toFixed(4) + " TON";
-                document.getElementById('taskText').innerText = d.daily_count + "/15";
-                document.getElementById('refText').innerText = d.refs;
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('earn', this)">Earn</button>
+        <button class="tab" onclick="showTab('refs', this)">Friends</button>
+        <button class="tab" onclick="showTab('cash', this)">Wallet</button>
+    </div>
 
-                // Update History List
-                const hList = document.getElementById('historyList');
-                if(d.payouts && d.payouts.length > 0) {
-                    hList.innerHTML = d.payouts.map(p => `
-                        <div class="history-item">
-                            <span>${p.date}: <b>${p.amt} TON</b></span>
-                            <span class="status-${p.status.toLowerCase()}">${p.status}</span>
-                        </div>
-                    `).join('');
-                }
+    <div id="earn-sec">
+        <a href="https://www.effectivegatecpm.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af" target="_blank" class="btn btn-blue" onclick="onViewAd()">🚀 VIEW SPONSOR AD</a>
+        <button id="claimBtn" class="btn btn-green" onclick="onClaim()">🎁 CLAIM REWARD</button>
+        <p style="font-size: 11px; color: var(--text-dim); margin-top: 10px;">New ad available every 30s.</p>
+    </div>
+
+    <div id="refs-sec" style="display:none;">
+        <h3>Invite Friends</h3>
+        <p style="font-size:13px; color:var(--text-dim);">Earn 0.005 TON for every friend who joins and watches 5 ads!</p>
+        <div id="rLink" style="background:#000; padding:12px; border-radius:12px; font-size:11px; color:var(--blue); border:1px dashed #2d3846; word-break:break-all;">Generating...</div>
+        <button class="btn btn-blue" onclick="copyRef()">🔗 COPY LINK</button>
+    </div>
+
+    <div id="cash-sec" style="display:none;">
+        <h3>Withdraw</h3>
+        <input type="text" id="walletInput" placeholder="Enter TON Wallet (UQ...)">
+        <button class="btn btn-blue" onclick="requestPayout()">💸 WITHDRAW 1.0 TON</button>
+        <a href="https://t.me/YOUR_TELEGRAM_HANDLE" class="btn btn-support">💬 CONTACT SUPPORT</a>
+        
+        <div id="historySection" style="margin-top:20px; text-align:left;">
+            <div class="stat-label">Transaction History</div>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        const BASE_URL = "https://telegramadsbot-jzso.onrender.com";
+        const BOT_ID = "Myearnbot2026_bot";
+        
+        tg.ready(); tg.expand();
+
+        function sync() {
+            const sp = tg.initDataUnsafe.start_param || "";
+            fetch(`${BASE_URL}/get_user_info?user_id=${tg.initDataUnsafe.user.id}&ref_by=${sp}`)
+                .then(r => r.json()).then(d => {
+                    document.getElementById('balText').innerText = d.bal.toFixed(4) + " TON";
+                    document.getElementById('taskText').innerText = d.daily_count + "/15";
+                    document.getElementById('refText').innerText = d.refs;
+                    const hList = document.getElementById('historyList');
+                    if(d.payouts && d.payouts.length > 0) {
+                        hList.innerHTML = d.payouts.map(p => `
+                            <div class="history-item">
+                                <span>${p.date}: <b>${p.amt} TON</b></span>
+                                <span class="status-${p.status.toLowerCase()}">${p.status}</span>
+                            </div>
+                        `).join('');
+                    } else { hList.innerHTML = '<p style="font-size:11px; color:#555;">No transactions yet.</p>'; }
+                });
+        }
+        sync();
+
+        function showTab(id, el) {
+            ['earn-sec', 'refs-sec', 'cash-sec'].forEach(s => document.getElementById(s).style.display = 'none');
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id + '-sec').style.display = 'block';
+            el.classList.add('active');
+            if(id === 'refs') document.getElementById('rLink').innerText = `https://t.me/${BOT_ID}/app?startapp=${tg.initDataUnsafe.user.id}`;
+        }
+
+        function onViewAd() {
+            tg.HapticFeedback.impactOccurred('medium');
+            setTimeout(() => { document.getElementById('claimBtn').style.display = 'block'; }, 2000);
+        }
+
+        function onClaim() {
+            fetch(`${BASE_URL}/reward?user_id=${tg.initDataUnsafe.user.id}`)
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(d => {
+                    confetti({ particleCount: 100, spread: 70 });
+                    tg.HapticFeedback.notificationOccurred('success');
+                    document.getElementById('claimBtn').style.display = 'none';
+                    sync();
+                }).catch(() => tg.showAlert("Limit reached for today!"));
+        }
+
+        function copyRef() {
+            navigator.clipboard.writeText(document.getElementById('rLink').innerText);
+            tg.showAlert("Link copied!");
+        }
+
+        function requestPayout() {
+            const w = document.getElementById('walletInput').value;
+            if(w.length < 10) return tg.showAlert("Invalid address.");
+            fetch(`${BASE_URL}/withdraw`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: tg.initDataUnsafe.user.id, wallet: w})
+            }).then(r => r.json()).then(d => {
+                if(d.error) tg.showAlert(d.error);
+                else { tg.showAlert("Success! Request sent."); sync(); }
             });
-    }
-</script>
+        }
+    </script>
+</body>
+</html>
