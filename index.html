@@ -1,27 +1,72 @@
-<script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px 20px; background: #f4f4f9; }
+        .earn-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .ad-link {
+            display: inline-block;
+            background-color: #0088cc;
+            color: white;
+            padding: 20px 40px;
+            text-decoration: none;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        #claimBtn {
+            margin-top: 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            display: none; /* Hidden until they click the ad */
+        }
+    </style>
+</head>
+<body>
 
-    function startAdFlow() {
-        const adUrl = "https://www.effectivegatecpm.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
+    <div class="earn-card">
+        <h2>💰 Crypto Earner</h2>
+        <p>Step 1: Click the blue button below.<br>Step 2: Return here to claim your TON.</p>
         
-        // Use the official Telegram Popup - this is impossible to block!
-        tg.showConfirm("To earn 0.001 TON, you must view the sponsor page. Open now?", (confirmed) => {
-            if (confirmed) {
-                // This method is the most reliable in 2026
-                tg.openLink(adUrl);
+        <a href="https://www.effectivegatecpm.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af" 
+           target="_blank" 
+           class="ad-link" 
+           onclick="showClaimButton()">
+           📺 VIEW AD
+        </a>
 
-                // Start reward process
-                document.getElementById('status').innerText = "Processing reward...";
-                
-                setTimeout(() => {
-                    fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${tg.initDataUnsafe.user.id}`)
-                        .then(() => {
-                            tg.showAlert("✅ Success! Your balance has been updated.");
-                            document.getElementById('status').innerText = "";
-                        });
-                }, 3000);
-            }
-        });
-    }
-</script>
+        <br>
+        <button id="claimBtn" onclick="claimReward()">🎁 CLAIM 0.001 TON</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+
+        function showClaimButton() {
+            // Show the green claim button after they click the ad
+            document.getElementById('claimBtn').style.display = 'inline-block';
+        }
+
+        function claimReward() {
+            const userId = tg.initDataUnsafe.user?.id || "user";
+            
+            fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${userId}`)
+                .then(() => {
+                    tg.showAlert("✅ Reward Sent! Check your balance in the bot.");
+                    tg.close(); // Close the app after success
+                })
+                .catch(() => {
+                    tg.showAlert("Server busy. Try again in 1 minute!");
+                });
+        }
+    </script>
+</body>
+</html>
