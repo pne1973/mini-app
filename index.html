@@ -1,51 +1,57 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crypto Earner</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js?v=2.0"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 40px 20px; background: #0e1621; color: white; }
-        .card { background: #17212b; padding: 30px; border-radius: 20px; border: 1px solid #242f3d; }
-        .ad-button {
-            display: block;
-            background: #0088cc;
-            color: white;
-            padding: 20px;
-            text-decoration: none;
-            border-radius: 12px;
-            font-weight: bold;
-            margin: 20px 0;
-            font-size: 18px;
+        body { 
+            background-color: #000000; 
+            color: #ffffff; 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            padding-top: 50px;
         }
-        #claim {
-            background: #28a745;
-            border: none;
+        .btn-ad {
+            display: block;
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #0088cc;
             color: white;
-            padding: 15px 40px;
-            border-radius: 10px;
+            text-decoration: none;
+            border-radius: 15px;
             font-weight: bold;
-            display: none; /* Hidden at start */
+            font-size: 20px;
+        }
+        #claimBtn {
+            display: none; /* Only shows after clicking ad */
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 20px;
         }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>💎 Crypto Earner</h1>
-        <p>1. Tap the button to view ad<br>2. Come back and claim reward</p>
+    <h1>💎 CRYPTO EARNER</h1>
+    <p>Earn TON by viewing ads</p>
 
-        <a href="https://www.effectivegatecpm.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af" 
-           target="_blank" 
-           class="ad-button" 
-           onclick="document.getElementById('claim').style.display='inline-block'">
-           🚀 VIEW AD & EARN
-        </a>
+    <a href="https://www.effectivegatecpm.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af" 
+       target="_blank" 
+       class="btn-ad" 
+       onclick="document.getElementById('claimBtn').style.display='block';">
+       1. VIEW AD
+    </a>
 
-        <br>
-        <button id="claim" onclick="sendReward()">🎁 CLAIM 0.001 TON</button>
-    </div>
+    <button id="claimBtn" onclick="sendReward()">2. CLAIM REWARD</button>
 
     <script>
         const tg = window.Telegram.WebApp;
@@ -53,13 +59,17 @@
         tg.expand();
 
         function sendReward() {
-            const uid = tg.initDataUnsafe.user?.id || "user";
-            fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${uid}`)
-                .then(() => {
-                    tg.showAlert("✅ 0.001 TON Added!");
-                    document.getElementById('claim').style.display='none';
-                })
-                .catch(() => tg.showAlert("Server is waking up... try once more!"));
+            const uid = tg.initDataUnsafe.user?.id || "0";
+            tg.showConfirm("Claim your 0.001 TON now?", (ok) => {
+                if(ok) {
+                    fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${uid}`)
+                    .then(() => {
+                        tg.showAlert("✅ TON added to balance!");
+                        tg.close();
+                    })
+                    .catch(() => tg.showAlert("Connecting to server... try once more."));
+                }
+            });
         }
     </script>
 </body>
