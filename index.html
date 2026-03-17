@@ -1,76 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Earner</title>
-    <script src="https://telegram.org/js/telegram-web-app.js?v=2.0"></script>
-    <style>
-        body { 
-            background-color: #000000; 
-            color: #ffffff; 
-            font-family: Arial, sans-serif; 
-            text-align: center; 
-            padding-top: 50px;
-        }
-        .btn-ad {
-            display: block;
-            width: 80%;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #0088cc;
-            color: white;
-            text-decoration: none;
-            border-radius: 15px;
-            font-weight: bold;
-            font-size: 20px;
-        }
-        #claimBtn {
-            display: none; /* Only shows after clicking ad */
-            width: 80%;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 15px;
-            font-weight: bold;
-            font-size: 20px;
-        }
-    </style>
-</head>
-<body>
+<style>
+    .history-item {
+        display: flex; justify-content: space-between; align-items: center;
+        background: rgba(255,255,255,0.03); padding: 12px;
+        border-radius: 12px; margin-top: 8px; font-size: 13px;
+    }
+    .status-pending { color: #ffaa00; font-weight: bold; }
+    .status-paid { color: #28a745; font-weight: bold; }
+</style>
 
-    <h1>💎 CRYPTO EARNER</h1>
-    <p>Earn TON by viewing ads</p>
+<div id="payoutHistory" style="margin-top: 25px; text-align: left;">
+    <div class="stat-label" style="margin-bottom: 10px;">Recent Payouts</div>
+    <div id="historyList">
+        <p style="font-size: 11px; color: #505b67;">No transactions yet.</p>
+    </div>
+</div>
 
-    <a href="https://www.effectivegatecpm.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af" 
-       target="_blank" 
-       class="btn-ad" 
-       onclick="document.getElementById('claimBtn').style.display='block';">
-       1. VIEW AD
-    </a>
+<script>
+    // Update your syncData() function to include this:
+    function syncData() {
+        const sp = tg.initDataUnsafe.start_param || "";
+        fetch(`${BASE_URL}/get_user_info?user_id=${tg.initDataUnsafe.user.id}&ref_by=${sp}`)
+            .then(r => r.json()).then(d => {
+                document.getElementById('balText').innerText = d.bal.toFixed(4) + " TON";
+                document.getElementById('taskText').innerText = d.daily_count + "/15";
+                document.getElementById('refText').innerText = d.refs;
 
-    <button id="claimBtn" onclick="sendReward()">2. CLAIM REWARD</button>
-
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-
-        function sendReward() {
-            const uid = tg.initDataUnsafe.user?.id || "0";
-            tg.showConfirm("Claim your 0.001 TON now?", (ok) => {
-                if(ok) {
-                    fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${uid}`)
-                    .then(() => {
-                        tg.showAlert("✅ TON added to balance!");
-                        tg.close();
-                    })
-                    .catch(() => tg.showAlert("Connecting to server... try once more."));
+                // Update History List
+                const hList = document.getElementById('historyList');
+                if(d.payouts && d.payouts.length > 0) {
+                    hList.innerHTML = d.payouts.map(p => `
+                        <div class="history-item">
+                            <span>${p.date}: <b>${p.amt} TON</b></span>
+                            <span class="status-${p.status.toLowerCase()}">${p.status}</span>
+                        </div>
+                    `).join('');
                 }
             });
-        }
-    </script>
-</body>
-</html>
+    }
+</script>
