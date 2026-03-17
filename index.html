@@ -1,39 +1,48 @@
-<script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
-<script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
+<head>
+    <script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
+    
+    <script>
+        // 2. Initialize it immediately in a global variable
+        let adController;
+        
+        // This function runs automatically as soon as the page is ready
+        window.onload = function() {
+            try {
+                adController = new TelegramAdsController();
+                adController.initialize({
+                    pubId: "76092",
+                    appId: "6586"
+                });
+                console.log("Rich Ads Ready");
+            } catch (e) {
+                console.error("SDK Initialization failed");
+            }
+        };
 
-    function startAdFlow() {
-        alert("Phase 1: Button Clicked"); // DEBUG ALERT
-        const btn = document.getElementById('adBtn');
-        btn.disabled = true;
+        function startAdFlow() {
+            // Check if SDK actually loaded
+            if (!adController) {
+                alert("Ad Network still loading... please wait 3 seconds.");
+                return;
+            }
 
-        try {
-            const controller = new TelegramAdsController();
-            alert("Phase 2: Controller Created"); // DEBUG ALERT
-            
-            controller.initialize({
-                pubId: "76092",
-                appId: "6586",
-            });
-
-            controller.showAd({
+            // Trigger the ad
+            adController.showAd({
                 type: 'rewarded',
                 onComplete: () => {
-                    alert("Phase 3: Ad Finished!"); // DEBUG ALERT
-                    finalizeReward();
-                    btn.disabled = false;
+                    // This is where you call your Render backend
+                    fetch('https://telegramadsbot-jzso.onrender.com/reward?user_id=' + window.Telegram.WebApp.initDataUnsafe.user.id);
+                    window.Telegram.WebApp.showAlert("✅ Success! TON added.");
                 },
                 onError: (err) => {
-                    alert("Ad Network Error: " + JSON.stringify(err));
-                    // Try the more reliable 'pop' format if video fails
-                    controller.showAd({ type: 'pop', onComplete: () => finalizeReward() });
-                    btn.disabled = false;
+                    // If video fails, force a popup (popups almost never fail)
+                    adController.showAd({ type: 'pop' });
                 }
             });
-        } catch (e) {
-            alert("System Error: " + e.message);
-            btn.disabled = false;
         }
-    }
-</script>
+    </script>
+</head>
+
+<body>
+    <button class="btn" onclick="startAdFlow()">💰 EARN TON</button>
+</body>
