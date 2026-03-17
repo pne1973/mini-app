@@ -1,57 +1,54 @@
 <script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
 
 <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
+    // Global controller instance
+    let richAds;
 
-    // Initialize the Controller with your specific IDs
-    const controller = new TelegramAdsController();
-    controller.initialize({
-        pubId: "76092",
-        appId: "6586", // Your updated ID
-    });
+    // Initialize when Telegram is ready
+    window.Telegram.WebApp.ready();
+
+    function initRichAds() {
+        try {
+            richAds = new TelegramAdsController();
+            richAds.initialize({
+                pubId: "76092",
+                appId: "6586"
+            });
+            console.log("Rich Ads Initialized");
+        } catch (err) {
+            console.error("SDK Load Failed:", err);
+        }
+    }
+
+    // Call init immediately
+    initRichAds();
 
     function startAdFlow() {
-        const btn = document.getElementById('adBtn');
-        const status = document.getElementById('status');
-        
-        btn.disabled = true;
-        status.innerText = "Loading Ad...";
+        if (!richAds) {
+            initRichAds(); // Re-try if it didn't load
+        }
 
-        controller.showAd({
-            type: 'rewarded', // Tries the Video Ad first
+        const status = document.getElementById('status');
+        status.innerText = "fetching high-cpm ad...";
+
+        richAds.showAd({
+            type: 'rewarded', // Video format
             onComplete: () => {
-                status.innerText = "Success! Verifying...";
-                finalizeReward();
-                btn.disabled = false;
+                status.innerText = "Ad complete! Rewarding...";
+                // Your backend reward logic
+                fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${window.Telegram.WebApp.initDataUnsafe.user.id}`)
+                    .then(() => window.Telegram.WebApp.showAlert("💎 0.001 TON Earned!"));
             },
-            onError: (err) => {
-                console.log("Video failed, trying Popup fallback...");
-                // Emergency Fallback: Popup ads almost always work!
-                controller.showAd({ 
+            onError: (error) => {
+                console.log("RichAds Video Error:", error);
+                // FALLBACK: If video fails, RichAds 'pop' format is very reliable
+                richAds.showAd({ 
                     type: 'pop', 
                     onComplete: () => {
-                        finalizeReward();
-                        btn.disabled = false;
-                    } 
+                         window.Telegram.WebApp.showAlert("Bonus: 0.0005 TON for popup ad!");
+                    }
                 });
             }
         });
     }
-
-    function finalizeReward() {
-        const uid = tg.initDataUnsafe.user.id;
-        // Connects to your Render server
-        fetch(`https://telegramadsbot-jzso.onrender.com/reward?user_id=${uid}`)
-            .then(r => {
-                if(r.ok) {
-                    tg.showAlert("💰 +0.001 TON added to your balance!");
-                    document.getElementById('status').innerText = "Ready for next ad";
-                }
-            })
-            .catch(() => tg.showAlert("Server error. But don't worry, we'll try to sync later."));
-    }
 </script>
-
-<button id="adBtn" class="btn" onclick="startAdFlow()">🚀 WATCH AD</button>
-<div id="status">Ready</div>
