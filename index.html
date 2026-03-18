@@ -9,18 +9,19 @@
         body { background: #0b0e11; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 15px; }
         .card { background: #1c1f24; border-radius: 15px; padding: 15px; margin: 10px 0; border: 1px solid #2d333b; }
         .bal-val { font-size: 32px; color: #0088cc; font-weight: bold; margin: 5px 0; }
-        button { background: #0088cc; color: white; border: none; padding: 12px; border-radius: 10px; width: 100%; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px; }
-        .ticker { background: rgba(124, 252, 0, 0.1); color: #7cfc00; font-size: 11px; padding: 5px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #7cfc0033; overflow: hidden; }
+        button { background: #0088cc; color: white; border: none; padding: 12px; border-radius: 10px; width: 100%; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px; transition: 0.3s; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .ticker { background: rgba(124, 252, 0, 0.1); color: #7cfc00; font-size: 11px; padding: 8px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #7cfc0033; min-height: 14px; }
         .ref-item { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; border-bottom: 1px solid #333; }
-        input { width: 100%; background: #000; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 8px; margin-top: 10px; box-sizing: border-box; }
+        input { width: 100%; background: #000; color: #fff; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-top: 10px; box-sizing: border-box; text-align: center; outline: none; }
     </style>
 </head>
 <body>
     <div class="ticker" id="ticker">🌐 Connecting to live network...</div>
 
-    <div style="display:flex; justify-content:space-between; font-size:11px; padding:0 5px;">
+    <div style="display:flex; justify-content:space-between; font-size:11px; padding:0 5px; color:#8a919e;">
         <span id="tier">🥉 BRONZE</span>
-        <span id="streak">🔥 0 DAY STREAK</span>
+        <span id="streakDisplay">🔥 0 DAY STREAK</span>
     </div>
 
     <div class="card">
@@ -39,7 +40,7 @@
     <div class="card">
         <div style="color:#8a919e; font-size:11px;">WITHDRAW (Min 0.05 TON)</div>
         <input type="text" id="wallet" placeholder="TON Address (UQ...)">
-        <button onclick="withdraw()" id="wBtn">Request Payout</button>
+        <button onclick="withdraw()" id="wBtn" disabled style="background:#2d333b">Request Payout</button>
         <div style="font-size:9px; color:#57606a; margin-top:5px;">Network Fee: 0.005 TON applies</div>
     </div>
 
@@ -49,26 +50,36 @@
         const AD_URL = "https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
         const user = tele.initDataUnsafe?.user;
 
-        // Initialize Supabase for Realtime
-        const _supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_KEY');
+        // ⚠️ REPLACE WITH YOUR ACTUAL SUPABASE KEYS FROM SETTINGS > API
+        const _supabase = supabase.createClient('https://your-id.supabase.co', 'your-anon-key');
 
         async function init() {
             if(!user) return;
+            tele.expand();
+            tele.ready();
             loadData();
             listenRealtime();
         }
 
         async function loadData() {
-            const res = await fetch(`${RENDER_URL}/check_eligibility?user_id=${user.id}`);
-            const data = await res.json();
-            document.getElementById('bal').innerText = data.bal.toFixed(4) + " TON";
-            document.getElementById('streak').innerText = `🔥 ${data.streak_days} DAY STREAK`;
-            
-            const lbRes = await fetch(`${RENDER_URL}/referral_leaderboard`);
-            const lbData = await lbRes.json();
-            document.getElementById('leaderboard').innerHTML = lbData.map((u,i) => 
-                `<div class="ref-item"><span>${i+1}. ${u.name}</span><span>${u.count} refs</span></div>`
-            ).join('');
+            try {
+                const res = await fetch(`${RENDER_URL}/check_eligibility?user_id=${user.id}`);
+                const data = await res.json();
+                document.getElementById('bal').innerText = data.bal.toFixed(4) + " TON";
+                document.getElementById('streakDisplay').innerText = `🔥 ${data.streak_days} DAY STREAK`;
+                
+                const lbRes = await fetch(`${RENDER_URL}/referral_leaderboard`);
+                const lbData = await lbRes.json();
+                document.getElementById('leaderboard').innerHTML = lbData.map((u,i) => 
+                    `<div class="ref-item"><span>${i+1}. ${u.name}</span><span>${u.count} refs</span></div>`
+                ).join('');
+
+                const wBtn = document.getElementById('wBtn');
+                if (data.bal >= 0.05) { 
+                    wBtn.disabled = false; 
+                    wBtn.style.background = "#0088cc"; 
+                }
+            } catch(e) { console.error("Load error:", e); }
         }
 
         function listenRealtime() {
@@ -76,17 +87,20 @@
                 const diff = payload.new.bal - payload.old.bal;
                 if(diff > 0) {
                     const msg = diff >= 0.002 ? "🔥 JACKPOT!" : "💎 Win:";
-                    document.getElementById('ticker').innerText = `${msg} User ...${payload.new.uid.slice(-4)} earned +${diff.toFixed(4)} TON`;
+                    document.getElementById('ticker').innerText = `${msg} User ...${payload.new.uid.slice(-4)} +${diff.toFixed(4)} TON`;
                 }
             }).subscribe();
         }
 
         async function playSpin() {
             tele.openLink(AD_URL);
+            const btn = document.getElementById('spinBtn');
+            btn.disabled = true; btn.innerText = "🎡 Spinning...";
             setTimeout(async () => {
                 const res = await fetch(`${RENDER_URL}/reward_spin?user_id=${user.id}`);
                 const data = await res.json();
                 tele.showAlert(`You got a ${data.type}! +${data.win} TON`);
+                btn.disabled = false; btn.innerText = "🎰 LUCKY SPIN (Watch Ad)";
                 loadData();
             }, 4000);
         }
@@ -95,27 +109,28 @@
             const res = await fetch(`${RENDER_URL}/daily_claim?user_id=${user.id}`);
             const data = await res.json();
             if(data.error) return tele.showAlert(data.error);
-            tele.showAlert(`Streak continued! +${data.reward} TON`);
+            tele.showAlert(`Daily reward claimed! +${data.reward} TON`);
             loadData();
         }
 
         function shareInvite() {
-            const url = `https://t.me/YourBotUsername?start=${user.id}`;
-            tele.shareExternalLink(url, "Earn real TON for free! Watch ads and win weekly prizes. 💎");
+            const botUsername = "CryptoEarnerBot"; // ⚠️ CHANGE TO YOUR BOT HANDLE
+            const url = `https://t.me/${botUsername}?start=${user.id}`;
+            tele.shareExternalLink(url, "💰 Join MyEarn TON V4 and win weekly prizes with me!");
         }
 
         async function withdraw() {
             const addr = document.getElementById('wallet').value;
-            if(addr.length < 10) return tele.showAlert("Invalid Address");
+            if(addr.length < 10) return tele.showAlert("Please enter a valid TON address.");
             const res = await fetch(`${RENDER_URL}/withdraw`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({user_id: user.id, address: addr})
             });
             const d = await res.json();
-            tele.showAlert(d.status === "ok" ? "Request Sent!" : d.error);
+            if(d.status === "ok") { tele.showAlert("Success! Admin will verify and pay soon."); loadData(); }
+            else { tele.showAlert(d.error); }
         }
 
-        tele.ready();
         init();
     </script>
 </body>
