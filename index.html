@@ -2,22 +2,27 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #1a1a1a; color: white; text-align: center; font-family: sans-serif; padding: 20px; }
-        .card { background: #2a2a2a; padding: 20px; border-radius: 15px; margin: 20px 0; border: 1px solid #444; }
-        .balance { font-size: 32px; color: #0088cc; font-weight: bold; }
-        button { background: #0088cc; color: white; border: none; padding: 15px 30px; border-radius: 10px; width: 100%; font-size: 18px; cursor: pointer; }
+        body { background: #0f0f0f; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 20px; overflow: hidden; }
+        .logo { font-size: 28px; font-weight: 800; margin-top: 30px; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .card { background: #1c1c1c; border-radius: 20px; padding: 30px; margin: 40px 0; border: 1px solid #333; }
+        .bal-label { color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .bal-val { font-size: 42px; color: #0088cc; font-weight: bold; margin-top: 10px; }
+        button { background: #0088cc; color: white; border: none; padding: 18px; border-radius: 12px; width: 100%; font-size: 18px; font-weight: bold; transition: 0.2s; }
+        button:active { transform: scale(0.98); background: #0077b5; }
     </style>
 </head>
 <body>
-    <h1>💎 MyEarn TON</h1>
+    <div class="logo">💎 MyEarn TON</div>
+    
     <div class="card">
-        <p>Your Balance</p>
-        <div id="bal" class="balance">0.0000 TON</div>
+        <div class="bal-label">Your Balance</div>
+        <div id="bal" class="bal-val">0.0000 TON</div>
     </div>
-    <button onclick="getReward()">Watch Ad & Earn</button>
+
+    <button onclick="watchAd()">Watch Ad & Earn</button>
 
     <script>
         const tele = window.Telegram.WebApp;
@@ -27,28 +32,31 @@
         const user = tele.initDataUnsafe?.user;
         const RENDER_URL = "https://telegramadsbot-jzso.onrender.com";
 
-        async function loadData() {
+        async function updateUI() {
             if (!user) return;
             try {
                 const res = await fetch(`${RENDER_URL}/get_user_info?user_id=${user.id}`);
                 const data = await res.json();
-                document.getElementById('bal').innerText = data.bal + " TON";
-            } catch (e) { console.error("Server Error:", e); }
+                document.getElementById('bal').innerText = data.bal.toFixed(4) + " TON";
+            } catch (e) { console.error(e); }
         }
 
-        async function getReward() {
-            if (!user) return alert("Open in Telegram!");
+        async function watchAd() {
+            // AD PLACEMENT: If you have an ad script, call it here.
+            // For now, we simulate the reward immediately:
             try {
                 const res = await fetch(`${RENDER_URL}/reward?user_id=${user.id}`);
                 const data = await res.json();
                 if (data.status === "ok") {
-                    document.getElementById('bal').innerText = data.new_bal + " TON";
+                    document.getElementById('bal').innerText = data.new_bal.toFixed(4) + " TON";
                     tele.HapticFeedback.notificationOccurred('success');
+                } else {
+                    alert("Daily limit reached (15/15)");
                 }
-            } catch (e) { alert("Server Busy"); }
+            } catch (e) { alert("Server error. Try again later."); }
         }
 
-        loadData();
+        updateUI();
     </script>
 </body>
 </html>
