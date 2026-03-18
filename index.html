@@ -10,10 +10,11 @@
         .card { background: #1c1f24; border-radius: 20px; padding: 20px; margin: 15px 0; border: 1px solid #2d333b; }
         .bal-val { font-size: 36px; color: #0088cc; font-weight: bold; margin: 10px 0; }
         .req-item { font-size: 14px; margin: 8px 0; text-align: left; padding-left: 10%; }
-        button { background: #0088cc; color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button { background: #0088cc; color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         button:disabled { background: #2d333b; color: #57606a; }
-        input { width: 90%; background: #000; color: #0088cc; border: 1px solid #333; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: center; font-size: 12px; }
+        input, textarea { width: 95%; background: #000; color: #0088cc; border: 1px solid #333; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: center; font-size: 14px; box-sizing: border-box; }
         .lb-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2d333b; font-size: 13px; }
+        #adminPanel { border: 2px dashed #e63946; display: none; }
     </style>
 </head>
 <body>
@@ -26,10 +27,10 @@
     </div>
 
     <div class="card">
-        <div style="color: #8a919e; font-size: 12px;">WITHDRAWAL REQUIREMENTS</div>
+        <div style="color: #8a919e; font-size: 12px;">WITHDRAWAL LOCK</div>
         <div class="req-item" id="sub-status">❌ Join Channel</div>
         <div class="req-item" id="ref-status">❌ Invite 3 Friends (0/3)</div>
-        <button onclick="window.open('https://t.me/c/3836027199', '_blank')" style="background: #222; font-size: 13px;">📢 Open Channel</button>
+        <button onclick="window.open('https://t.me/+f0K9uT_R-m8zNTlk', '_blank')" style="background: #222; font-size: 13px;">📢 Open Channel</button>
         <button id="withdrawBtn" onclick="requestWithdraw()" disabled>Withdraw TON</button>
     </div>
 
@@ -40,16 +41,22 @@
     </div>
 
     <div class="card">
-        <div style="color: #8a919e; font-size: 12px; margin-bottom: 10px;">🏆 TOP 10 EARNERS</div>
-        <div id="leaderboard-list">Loading rankings...</div>
+        <div style="color: #8a919e; font-size: 12px; margin-bottom: 10px;">🏆 TOP EARNERS</div>
+        <div id="leaderboard-list">Loading...</div>
+    </div>
+
+    <div id="adminPanel" class="card">
+        <div style="color: #e63946; font-weight: bold;">🛠 ADMIN BROADCAST</div>
+        <textarea id="bcMsg" placeholder="Message to everyone..."></textarea>
+        <button onclick="sendBroadcast()" id="bcBtn" style="background: #e63946;">🚀 SEND TO ALL</button>
     </div>
 
     <script>
         const tele = window.Telegram.WebApp;
         const RENDER_URL = "https://telegramadsbot-jzso.onrender.com";
+        const MY_ADMIN_ID = "5401881400"; 
         const user = tele.initDataUnsafe?.user;
 
-        // Init OnClickA
         window.initCdTma?.({ id: '432115' }).then(show => {
             window.show = show;
             document.getElementById('adBtn').disabled = false;
@@ -59,14 +66,12 @@
         async function loadApp() {
             if (!user) return;
             document.getElementById('refLink').value = `https://t.me/telegramadsbot-jzso?start=${user.id}`;
+            if (String(user.id) === MY_ADMIN_ID) document.getElementById('adminPanel').style.display = 'block';
             
             try {
-                // Fetch User Status
                 const res = await fetch(`${RENDER_URL}/check_eligibility?user_id=${user.id}`);
                 const data = await res.json();
                 document.getElementById('bal').innerText = data.bal.toFixed(4) + " TON";
-                
-                // Requirement UI
                 document.getElementById('sub-status').innerText = data.is_subbed ? "✅ Subscribed" : "❌ Join Channel";
                 document.getElementById('sub-status').style.color = data.is_subbed ? "#7cfc00" : "#ff4d4d";
                 document.getElementById('ref-status').innerText = `${data.ref_count >= 3 ? '✅' : '❌'} Invite 3 Friends (${data.ref_count}/3)`;
@@ -77,41 +82,9 @@
                     wBtn.disabled = false; wBtn.style.background = "#0088cc";
                 }
 
-                // Fetch Leaderboard
                 const lbRes = await fetch(`${RENDER_URL}/leaderboard`);
                 const lbData = await lbRes.json();
-                const lbList = document.getElementById('leaderboard-list');
-                lbList.innerHTML = lbData.map((u, i) => `
+                document.getElementById('leaderboard-list').innerHTML = lbData.map((u, i) => `
                     <div class="lb-row">
                         <span>${i < 3 ? ['🥇','🥈','🥉'][i] : i+1} User ${u.name}</span>
-                        <span style="color:#0088cc; font-weight:bold;">${u.bal.toFixed(4)}</span>
-                    </div>
-                `).join('');
-
-            } catch (e) { console.error(e); }
-        }
-
-        async function playAd() {
-            if (!window.show) return;
-            window.show().then(async () => {
-                const res = await fetch(`${RENDER_URL}/reward?user_id=${user.id}`);
-                const data = await res.json();
-                document.getElementById('bal').innerText = data.new_bal.toFixed(4) + " TON";
-                tele.HapticFeedback.notificationOccurred('success');
-            }).catch(e => tele.showAlert("Watch the full ad to earn!"));
-        }
-
-        function copyRef() {
-            document.getElementById("refLink").select();
-            document.execCommand("copy");
-            tele.showAlert("Copied! Now share it with 3 people.");
-        }
-
-        function requestWithdraw() {
-            tele.showPopup({ title: 'Withdrawal', message: 'Enter your TON address:', buttons: [{type: 'ok', text: 'Submit'}] });
-        }
-
-        tele.ready(); tele.expand(); loadApp();
-    </script>
-</body>
-</html>
+                        <span style="color:#0088cc;
