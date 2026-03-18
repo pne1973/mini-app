@@ -1,39 +1,36 @@
-<script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyEarn TON</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { background: #1a1a1a; color: white; text-align: center; font-family: sans-serif; padding-top: 50px; }
+        .btn { background: #0088cc; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <h1>💎 MyEarn TON</h1>
+    <p id="user-display">Loading User...</p>
+    <button class="btn" onclick="earn()">Watch Ad & Earn</button>
 
-    // UPDATE THIS to your actual Render Web Service URL
-    const API_URL = "https://telegramadsbot-jzso.onrender.com"; 
-    const userId = tg.initDataUnsafe?.user?.id;
+    <script>
+        // 2. Initialize Telegram
+        const tele = window.Telegram.WebApp;
+        tele.expand(); // Make it full screen
+        tele.ready();  // STOP the loading bar
 
-    async function loadData() {
-        if (!userId) return;
-        // Fetch start_param for referral tracking
-        const startParam = tg.initDataUnsafe?.start_param || '';
-        try {
-            const res = await fetch(`${API_URL}/get_user_info?user_id=${userId}&ref_by=${startParam}`);
-            const data = await res.json();
-            document.getElementById('balance').innerText = `${data.bal.toFixed(4)} TON`;
-        } catch (e) {
-            console.error("Backend connection failed.");
+        const user = tele.initDataUnsafe?.user;
+        if (user) {
+            document.getElementById('user-display').innerText = "Hello, " + user.first_name;
+        } else {
+            document.getElementById('user-display').innerText = "Error: Open inside Telegram";
         }
-    }
 
-    async function handleClaim() {
-        try {
-            const res = await fetch(`${API_URL}/reward?user_id=${userId}`);
-            const data = await res.json();
-            if (data.status === "ok") {
-                document.getElementById('balance').innerText = `${data.new_bal} TON`;
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-            } else {
-                tg.showAlert("Daily limit (15) reached!");
-            }
-        } catch (e) {
-            tg.showAlert("Server error. Try again later.");
+        function earn() {
+            alert("Clicked! Now we connect to Render...");
         }
-    }
-
-    // Call loadData when app opens
-    loadData();
-</script>
+    </script>
+</body>
+</html>
