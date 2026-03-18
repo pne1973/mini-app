@@ -4,59 +4,86 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://js.onclckvd.com/in-stream-ad-admanager/tma.js"></script>
+    
     <style>
-        body { background: #0f0f0f; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 20px; overflow: hidden; }
-        .logo { font-size: 28px; font-weight: 800; margin-top: 30px; display: flex; justify-content: center; align-items: center; gap: 10px; }
-        .card { background: #1c1c1c; border-radius: 20px; padding: 30px; margin: 40px 0; border: 1px solid #333; }
-        .bal-label { color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
-        .bal-val { font-size: 42px; color: #0088cc; font-weight: bold; margin-top: 10px; }
-        button { background: #0088cc; color: white; border: none; padding: 18px; border-radius: 12px; width: 100%; font-size: 18px; font-weight: bold; transition: 0.2s; }
-        button:active { transform: scale(0.98); background: #0077b5; }
+        body { background: #0b0e11; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .header { margin-top: 20px; font-weight: bold; font-size: 20px; color: #0088cc; }
+        .card { background: #1c1f24; border-radius: 24px; padding: 35px; margin: 30px 0; border: 1px solid #2d333b; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .bal-label { color: #8a919e; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .bal-val { font-size: 38px; color: #ffffff; font-weight: 800; }
+        .ton-unit { font-size: 18px; color: #0088cc; margin-left: 5px; }
+        #adBtn { background: #0088cc; color: white; border: none; padding: 18px; border-radius: 16px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        #adBtn:disabled { background: #2d333b; color: #57606a; cursor: not-allowed; }
+        #adBtn:active { transform: scale(0.96); }
     </style>
 </head>
 <body>
-    <div class="logo">💎 MyEarn TON</div>
+    <div class="header">💎 MYEARN TON</div>
     
     <div class="card">
-        <div class="bal-label">Your Balance</div>
-        <div id="bal" class="bal-val">0.0000 TON</div>
+        <div class="bal-label">Current Balance</div>
+        <div id="bal" class="bal-val">0.0000<span class="ton-unit">TON</span></div>
     </div>
 
-    <button onclick="watchAd()">Watch Ad & Earn</button>
+    <button id="adBtn" onclick="playAd()" disabled>Initializing Ads...</button>
 
     <script>
         const tele = window.Telegram.WebApp;
-        tele.expand();
-        tele.ready();
-
-        const user = tele.initDataUnsafe?.user;
         const RENDER_URL = "https://telegramadsbot-jzso.onrender.com";
+        const user = tele.initDataUnsafe?.user;
 
-        async function updateUI() {
+        // 1. Initialize OnClickA with your ID: 432115
+        window.initCdTma?.({ id: '432115' })
+            .then(show => {
+                window.show = show;
+                document.getElementById('adBtn').disabled = false;
+                document.getElementById('adBtn').innerText = "🎥 Watch Ad & Earn";
+            })
+            .catch(e => {
+                console.error("Ad Engine Failed:", e);
+                document.getElementById('adBtn').innerText = "Ads Offline";
+            });
+
+        // 2. Fetch User Data
+        async function loadData() {
             if (!user) return;
             try {
                 const res = await fetch(`${RENDER_URL}/get_user_info?user_id=${user.id}`);
                 const data = await res.json();
-                document.getElementById('bal').innerText = data.bal.toFixed(4) + " TON";
-            } catch (e) { console.error(e); }
+                document.getElementById('bal').innerHTML = `${data.bal.toFixed(4)}<span class="ton-unit">TON</span>`;
+            } catch (e) { console.error("Data Load Error:", e); }
         }
 
-        async function watchAd() {
-            // AD PLACEMENT: If you have an ad script, call it here.
-            // For now, we simulate the reward immediately:
-            try {
-                const res = await fetch(`${RENDER_URL}/reward?user_id=${user.id}`);
-                const data = await res.json();
-                if (data.status === "ok") {
-                    document.getElementById('bal').innerText = data.new_bal.toFixed(4) + " TON";
-                    tele.HapticFeedback.notificationOccurred('success');
-                } else {
-                    alert("Daily limit reached (15/15)");
-                }
-            } catch (e) { alert("Server error. Try again later."); }
+        // 3. Play Ad and Reward
+        async function playAd() {
+            if (!window.show) return;
+
+            // Show the Ad
+            window.show()
+                .then(async () => {
+                    // Ad finished successfully! Talk to Render.
+                    try {
+                        const res = await fetch(`${RENDER_URL}/reward?user_id=${user.id}`);
+                        const data = await res.json();
+                        if (data.status === "ok") {
+                            document.getElementById('bal').innerHTML = `${data.new_bal.toFixed(4)}<span class="ton-unit">TON</span>`;
+                            tele.HapticFeedback.notificationOccurred('success');
+                        }
+                    } catch (err) {
+                        tele.showAlert("Reward system error. Your progress is saved.");
+                    }
+                })
+                .catch(e => {
+                    // User closed the ad too early or error occurred
+                    tele.showAlert("Ad not completed. Watch fully to earn TON!");
+                });
         }
 
-        updateUI();
+        // Setup App
+        tele.ready();
+        tele.expand();
+        loadData();
     </script>
 </body>
 </html>
