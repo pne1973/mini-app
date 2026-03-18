@@ -1,71 +1,165 @@
-<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <style>
+        body { background: #0b0e11; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 15px; }
+        .card { background: #1c1f24; border-radius: 15px; padding: 15px; margin: 10px 0; border: 1px solid #2d333b; }
+        .bal-val { font-size: 32px; color: #0088cc; font-weight: bold; margin: 5px 0; }
+        button { background: #0088cc; color: white; border: none; padding: 12px; border-radius: 10px; width: 100%; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 8px; }
+        button:disabled { opacity: 0.5; }
+        .ticker { background: rgba(124, 252, 0, 0.1); color: #7cfc00; font-size: 11px; padding: 8px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #7cfc0033; }
+        input { width: 100%; background: #000; color: #fff; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-top: 10px; box-sizing: border-box; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="ticker" id="ticker">🌐 Connecting to live network...</div>
 
-<div class="card">
-    <div style="color:#8a919e; font-size:11px;">AVAILABLE BALANCE</div>
-    <div id="bal" class="bal-val">0.0000 TON</div>
-    <div style="font-size:10px; color:#f1c40f; margin-bottom:10px;">⚡ Energy: <span id="energyVal">0</span>/10</div>
-    
-    <button onclick="playSpin()" id="spinBtn">🎰 LUCKY SPIN (30s Ad)</button>
-    <button onclick="claimDaily()" id="dailyBtn" style="background:#27ae60;">📅 DAILY CHECK-IN (60s Ad)</button>
-</div>
+    <div style="display:flex; justify-content:space-between; font-size:11px; padding:0 5px; color:#8a919e;">
+        <span id="vipStatus">🥉 BRONZE</span>
+        <span id="energyText">⚡ Energy: 0/10</span>
+    </div>
 
-<div class="card">
-    <div style="color:#8a919e; font-size:11px;">WITHDRAWAL CENTER</div>
-    <div id="refTracker" style="font-size:11px; margin:10px 0; color:#e74c3c;">❌ Referrals: 0/3 Required</div>
-    <input type="text" id="wallet" placeholder="TON Address (UQ...)">
-    <button onclick="withdraw()" id="wBtn" style="background:#2d333b;" disabled>🔒 Withdraw Locked</button>
-</div>
+    <div class="card">
+        <div style="color:#8a919e; font-size:11px;">AVAILABLE BALANCE</div>
+        <div id="bal" class="bal-val">0.0000 TON</div>
+        <button onclick="playSpin()" id="spinBtn">🎰 LUCKY SPIN (30s Ad)</button>
+        <button onclick="claimDaily()" id="dailyBtn" style="background:#27ae60;">📅 DAILY CHECK-IN (60s Ad)</button>
+    </div>
 
-<script>
-    // ... Initialization code ...
+    <div class="card" id="taskCard">
+        <div style="color:#0088cc; font-size:11px; font-weight:bold;">🚀 ONE-TIME BONUS</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; background:#000; padding:10px; border-radius:10px;">
+            <div style="text-align:left;"><div style="font-size:12px;">Join Channel</div><div style="font-size:10px; color:#27ae60;">+0.005 TON</div></div>
+            <button onclick="doTask()" id="taskBtn" style="width:auto; padding:5px 15px; margin:0; font-size:11px;">GO</button>
+        </div>
+    </div>
 
-    async function loadData() {
-        const res = await (await fetch(`${RENDER_URL}/check_eligibility?user_id=${user.id}`)).json();
-        
-        // Update Balance & Energy
-        document.getElementById('bal').innerText = res.bal.toFixed(4) + " TON";
-        document.getElementById('energyVal').innerText = res.is_vip ? "∞" : res.energy;
-        
-        // Update Payout Button & Referral Tracker
-        const wBtn = document.getElementById('wBtn');
-        const tracker = document.getElementById('refTracker');
-        
-        if (res.ref_count >= 3) {
-            tracker.innerText = `✅ Referrals: ${res.ref_count}/3 (Unlocked)`;
-            tracker.style.color = "#27ae60";
-            if (res.bal >= 0.05) {
-                wBtn.disabled = false;
-                wBtn.innerText = "Request Payout";
-                wBtn.style.background = "#0088cc";
-            } else {
-                wBtn.innerText = "Need 0.05 TON";
-            }
-        } else {
-            tracker.innerText = `❌ Referrals: ${res.ref_count}/3 Required`;
-            wBtn.innerText = "🔒 Locked (Need 3 Refs)";
+    <div class="card" style="border: 1px solid #f1c40f;">
+        <div id="ton-connect" style="scale:0.7; margin-bottom:10px;"></div>
+        <button onclick="buyVip()" id="buyVipBtn" style="background:linear-gradient(45deg, #f1c40f, #f39c12);">👑 UPGRADE TO VIP (2X PAY + UNLIMITED)</button>
+    </div>
+
+    <div class="card">
+        <div id="refTracker" style="font-size:11px; color:#e74c3c; margin-bottom:10px;">❌ Referrals: 0/3</div>
+        <button onclick="shareInvite()" style="background:#f39c12;">📤 INVITE FRIENDS</button>
+        <button onclick="copyLink()" style="background:#34495e; font-size:11px;">🔗 COPY MY LINK</button>
+    </div>
+
+    <div class="card">
+        <div style="color:#8a919e; font-size:11px;">WITHDRAW (Min 0.05 TON)</div>
+        <input type="text" id="wallet" placeholder="TON Address">
+        <button onclick="withdraw()" id="wBtn" disabled>🔒 LOCKED</button>
+    </div>
+
+    <script>
+        const tele = window.Telegram.WebApp;
+        const RENDER_URL = "https://telegramadsbot-jzso.onrender.com";
+        const AD_URL = "https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
+        const user = tele.initDataUnsafe?.user;
+
+        // ⚠️ REPLACE THESE
+        const _supabase = supabase.createClient('https://your-id.supabase.co', 'your-anon-key');
+
+        const tonConnectUI = new TONConnectUI.TonConnectUI({
+            manifestUrl: 'https://pne1973.github.io/mini-app/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect'
+        });
+
+        async function init() {
+            if(!user) return;
+            tele.expand();
+            loadData();
+            listenRealtime();
         }
-    }
 
-    async function claimDaily() {
-        tele.openLink(AD_URL);
-        const btn = document.getElementById('dailyBtn');
-        let sec = 60; // 60 Second timer for higher value daily reward
-        btn.disabled = true;
-        
-        const timer = setInterval(async () => {
-            sec--;
-            btn.innerText = `⏳ Watching Ad... (${sec}s)`;
-            if(sec <= 0) {
-                clearInterval(timer);
-                const r = await (await fetch(`${RENDER_URL}/daily_claim?user_id=${user.id}`)).json();
-                if(r.error) tele.showAlert(r.error);
-                else tele.showAlert("Daily Bonus Added!");
-                btn.disabled = false;
-                btn.innerText = "📅 DAILY CHECK-IN (60s Ad)";
-                loadData();
+        async function loadData() {
+            const res = await (await fetch(`${RENDER_URL}/check_eligibility?user_id=${user.id}`)).json();
+            document.getElementById('bal').innerText = res.bal.toFixed(4) + " TON";
+            document.getElementById('energyText').innerText = `⚡ Energy: ${res.is_vip ? '∞' : res.energy}/10`;
+            document.getElementById('refTracker').innerText = `${res.ref_count >= 3 ? '✅' : '❌'} Referrals: ${res.ref_count}/3`;
+            if(res.is_vip) { 
+                document.getElementById('vipStatus').innerText = "👑 GOLD VIP";
+                document.getElementById('buyVipBtn').style.display = 'none';
             }
-        }, 1000);
-    }
-    
-    // ... Rest of the functions (playSpin, withdraw, etc.) ...
-</script>
+            if(res.ref_count >= 3 && res.bal >= 0.05) {
+                document.getElementById('wBtn').disabled = false;
+                document.getElementById('wBtn').innerText = "Request Payout";
+                document.getElementById('wBtn').style.background = "#0088cc";
+            }
+            if(res.joined_channel) document.getElementById('taskCard').style.display = 'none';
+        }
+
+        function listenRealtime() {
+            _supabase.channel('users').on('postgres_changes', {event:'UPDATE', schema:'public', table:'users'}, p => {
+                const diff = p.new.bal - p.old.bal;
+                if(diff > 0) document.getElementById('ticker').innerText = `💎 User ...${p.new.uid.slice(-4)} won +${diff.toFixed(4)} TON`;
+            }).subscribe();
+        }
+
+        async function playSpin() {
+            tele.openLink(AD_URL);
+            let sec = 30;
+            const btn = document.getElementById('spinBtn');
+            btn.disabled = true;
+            const t = setInterval(async () => {
+                sec--; btn.innerText = `⏳ Waiting (${sec}s)`;
+                if(sec <= 0) {
+                    clearInterval(t);
+                    const r = await (await fetch(`${RENDER_URL}/reward_spin?user_id=${user.id}`)).json();
+                    tele.showAlert(`Win: +${r.win} TON`);
+                    btn.disabled = false; btn.innerText = "🎰 LUCKY SPIN (30s Ad)";
+                    loadData();
+                }
+            }, 1000);
+        }
+
+        async function claimDaily() {
+            tele.openLink(AD_URL);
+            let sec = 60;
+            const btn = document.getElementById('dailyBtn');
+            btn.disabled = true;
+            const t = setInterval(async () => {
+                sec--; btn.innerText = `⏳ Waiting (${sec}s)`;
+                if(sec <= 0) {
+                    clearInterval(t);
+                    const r = await (await fetch(`${RENDER_URL}/daily_claim?user_id=${user.id}`)).json();
+                    tele.showAlert("Bonus Claimed!");
+                    btn.disabled = false; btn.innerText = "📅 DAILY CHECK-IN (60s Ad)";
+                    loadData();
+                }
+            }, 1000);
+        }
+
+        function shareInvite() {
+            const url = `https://t.me/Myearnbot2026_bot?start=${user.id}`;
+            tele.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=Earn+TON+Now!`);
+        }
+
+        function copyLink() {
+            const url = `https://t.me/Myearnbot2026_bot?start=${user.id}`;
+            const el = document.createElement('textarea'); el.value = url; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+            tele.showAlert("Copied!");
+        }
+
+        async function buyVip() {
+            if(!tonConnectUI.connected) return tele.showAlert("Connect Wallet First!");
+            const tx = { validUntil: Math.floor(Date.now()/1000)+60, messages: [{ address: "YOUR_WALLET_ADDRESS", amount: "500000000" }] };
+            try { await tonConnectUI.sendTransaction(tx); tele.showAlert("Sent! Contact admin with UID to activate."); } catch(e) {}
+        }
+
+        async function withdraw() {
+            const addr = document.getElementById('wallet').value;
+            const r = await (await fetch(`${RENDER_URL}/withdraw`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:user.id, address:addr})})).json();
+            tele.showAlert(r.status === "ok" ? "Pending Approval" : r.error);
+            loadData();
+        }
+
+        init();
+    </script>
+</body>
+</html>
