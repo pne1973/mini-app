@@ -8,54 +8,101 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root { --bg: #0b0f14; --card: #1c222b; --blue: #0088cc; --green: #28a745; --text-dim: #818d99; --gold: #ffaa00; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; display: flex; justify-content: center; padding: 20px 16px; }
-        .app-container { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; }
-        .glass-card { background: var(--card); padding: 24px; border-radius: 24px; margin-bottom: 16px; width: 100%; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-        .btn { display: block; width: 100%; padding: 18px; border-radius: 16px; font-weight: bold; border: none; cursor: pointer; color: #fff; font-size: 16px; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; display: flex; justify-content: center; padding: 20px 16px; margin: 0; }
+        .app-container { width: 100%; max-width: 420px; }
+        .glass-card { background: var(--card); padding: 20px; border-radius: 20px; margin-bottom: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #000; padding: 5px; border-radius: 12px; }
+        .tab { flex: 1; padding: 10px; border-radius: 8px; border: none; color: var(--text-dim); background: none; font-weight: bold; }
+        .tab.active { background: var(--blue); color: #fff; }
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; color: #fff; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-blue { background: var(--blue); }
-        #balance { font-size: 2.5rem; margin-bottom: 5px; }
+        .btn-green { background: var(--green); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; margin-top: 10px; }
     </style>
 </head>
 <body>
-
 <div class="app-container">
-    <div class="glass-card">
-        <h2 id="balance" style="color: var(--gold)">0.0000 TON</h2>
-        <p style="color: var(--text-dim)">Ready to claim</p>
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('earn')">Earn</button>
+        <button class="tab" onclick="showTab('wallet')">Wallet</button>
     </div>
-    <button class="btn btn-blue" onclick="handleClaim()">Claim Rewards</button>
+
+    <div id="earn" class="tab-content active">
+        <div class="glass-card">
+            <h2 id="balance" style="color: var(--gold); font-size: 2.5rem;">0.0000 TON</h2>
+            <p>Your Balance</p>
+        </div>
+        <button class="btn btn-blue" onclick="handleClaim()">Watch Ad & Claim</button>
+        <button class="btn btn-green" onclick="shareRef()">Invite Friends (0.005 TON)</button>
+    </div>
+
+    <div id="wallet" class="tab-content">
+        <div class="glass-card">
+            <h3>Withdraw TON</h3>
+            <input type="text" id="walletAddr" placeholder="Enter TON Wallet Address">
+            <button class="btn btn-green" onclick="handleWithdraw()">Withdraw (Min 1.0)</button>
+        </div>
+        <div id="payouts" style="font-size: 12px; color: var(--text-dim);"></div>
+    </div>
 </div>
 
 <script>
     const tg = window.Telegram.WebApp;
-    tg.expand(); [cite: 33]
-
-    // CHANGE THIS to your Render URL after deploying
-    const API_URL = "https://your-backend-url.onrender.com"; 
+    tg.expand();
+    const API_URL = "https://your-render-url.onrender.com"; // UPDATE THIS
     const userId = tg.initDataUnsafe?.user?.id;
 
     async function loadData() {
-        if (!userId) return;
-        try {
-            const res = await fetch(`${API_URL}/get_user_info?user_id=${userId}`);
-            const data = await res.json();
-            document.getElementById('balance').innerText = `${data.bal.toFixed(4)} TON`;
-        } catch (e) { console.error("Error loading data", e); }
+        const startParam = tg.initDataUnsafe?.start_param;
+        const res = await fetch(`${API_URL}/get_user_info?user_id=${userId}&ref_by=${startParam || ''}`);
+        const data = await res.json();
+        document.getElementById('balance').innerText = `${data.bal.toFixed(4)} TON`;
+        
+        // Show payout history
+        const pList = data.payouts.map(p => `<div>${p.amt} TON - ${p.status} (${p.created_at.split('T')[0]})</div>`).join('');
+        document.getElementById('payouts').innerHTML = pList || "No withdrawal history";
     }
 
     async function handleClaim() {
-        try {
-            const res = await fetch(`${API_URL}/reward?user_id=${userId}`);
-            const data = await res.json();
-            
-            if (data.status === "ok") {
-                document.getElementById('balance').innerText = `${data.new_bal} TON`;
-                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); [cite: 37]
-            } else {
-                tg.showAlert("Daily limit reached or error!");
-            }
-        } catch (e) { tg.showAlert("Server is offline!"); }
+        const res = await fetch(`${API_URL}/reward?user_id=${userId}`);
+        const data = await res.json();
+        if (data.status === "ok") {
+            document.getElementById('balance').innerText = `${data.new_bal} TON`;
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        } else {
+            tg.showAlert("Limit reached for today!");
+        }
+    }
+
+    async function handleWithdraw() {
+        const wallet = document.getElementById('walletAddr').value;
+        if (!wallet) return tg.showAlert("Enter wallet address!");
+        
+        const res = await fetch(`${API_URL}/withdraw`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id: userId, wallet: wallet })
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+            tg.showAlert("Withdrawal Requested!");
+            loadData();
+        } else {
+            tg.showAlert(data.error);
+        }
+    }
+
+    function shareRef() {
+        const link = `https://t.me/YourBotName?start=${userId}`;
+        tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=Join and earn TON!`);
+    }
+
+    function showTab(t) {
+        document.querySelectorAll('.tab, .tab-content').forEach(el => el.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        document.getElementById(t).classList.add('active');
     }
 
     loadData();
