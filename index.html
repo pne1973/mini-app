@@ -1,150 +1,94 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MyEarn TON Bot</title>
-    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-
     <style>
-        :root { --bg: #0d1117; --card: #161b22; --text: #f0f6fc; --accent: #238636; --vip: #f1c40f; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow-x: hidden; }
-        
-        /* UI Components */
-        .card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid #30363d; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-        .balance-label { font-size: 12px; color: #8b949e; letter-spacing: 1px; }
-        .balance-val { font-size: 36px; font-weight: 800; margin: 5px 0; color: #fff; }
-        
-        /* XP Progress Bar */
-        .xp-container { margin-top: 10px; }
-        .xp-bar { width: 100%; height: 8px; background: #30363d; border-radius: 4px; overflow: hidden; }
-        .xp-fill { height: 100%; background: #58a6ff; width: 0%; transition: width 0.5s ease; }
-        
-        /* Buttons */
-        .btn { display: block; width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; transition: transform 0.1s; margin: 10px 0; }
-        .btn:active { transform: scale(0.98); }
-        .btn-main { background: var(--accent); color: white; }
-        .btn-vip { background: linear-gradient(45deg, #f1c40f, #d4af37); color: #000; }
-        
-        /* Header Info */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        #ton-connect { scale: 0.9; }
-
-        /* Status Badges */
-        .badge { font-size: 10px; padding: 4px 8px; border-radius: 20px; text-transform: uppercase; font-weight: bold; }
-        .badge-vip { background: var(--vip); color: black; }
-        .badge-free { background: #30363d; color: #8b949e; }
+        body { font-family: sans-serif; background: #0d1117; color: white; text-align: center; padding: 20px; }
+        .card { background: #161b22; border-radius: 15px; padding: 20px; border: 1px solid #30363d; margin-bottom: 20px; }
+        .xp-bar { width: 100%; height: 8px; background: #333; border-radius: 4px; margin: 10px 0; overflow: hidden; }
+        .xp-fill { height: 100%; background: linear-gradient(90deg, #0088cc, #00ffcc); width: 0%; transition: 0.5s; }
+        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin: 10px 0; font-size: 16px; }
+        .btn-spin { background: #238636; color: white; }
+        .btn-vip { background: #f1c40f; color: black; }
+        .badge { font-size: 10px; background: #30363d; padding: 4px 8px; border-radius: 10px; color: #8b949e; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <div id="statusBadge" class="badge badge-free">Free Member</div>
-        <div id="ton-connect"></div>
-    </div>
+    <div id="ton-connect" style="float: right;"></div>
+    <div style="clear: both; margin-bottom: 20px;"></div>
 
     <div class="card">
-        <div class="balance-label">WALLET BALANCE</div>
-        <div id="bal" class="balance-val">0.0000 TON</div>
-        
-        <div class="xp-container">
-            <div class="xp-bar"><div id="xpF" class="xp-fill"></div></div>
-            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 6px; color: #8b949e;">
-                <span>Level <span id="lvl">1</span></span>
-                <span>Energy: <span id="nrg">0</span>/10</span>
-            </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span id="rank" class="badge">NOVICE</span>
+            <span id="nrg" style="font-size: 12px;">⚡ 0/10</span>
+        </div>
+        <h1 id="bal" style="font-size: 40px; margin: 10px 0;">0.0000</h1>
+        <div class="xp-bar"><div id="xpFill" class="xp-fill"></div></div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #8b949e;">
+            <span>Level <span id="lvl">1</span></span>
+            <span id="status">Free Member</span>
         </div>
     </div>
 
-    <button class="btn btn-main" onclick="spin()">🎰 WATCH AD & SPIN</button>
-    
-    <div id="vipSection">
-        <button class="btn btn-vip" onclick="buyVIP()">👑 ACTIVATE VIP (0.5 TON)</button>
-        <p style="font-size: 11px; color: #8b949e; text-align: center;">VIPs get 2x Rewards & Faster Energy Regen</p>
-    </div>
+    <button class="btn btn-spin" onclick="spin()">🎰 WATCH AD & SPIN</button>
+    <button class="btn btn-vip" id="vipBtn" onclick="buyVIP()">👑 ACTIVATE VIP (0.5 TON)</button>
+    <button class="btn" style="background: #24292f;" onclick="share()">🚀 INVITE FRIENDS (10%)</button>
 
     <script>
         const tele = window.Telegram.WebApp;
-        const user = tele.initDataUnsafe.user || { id: "12345", first_name: "Guest" };
-        const R_URL = "https://your-app-name.onrender.com"; // ⚠️ REPLACE WITH YOUR RENDER URL
-        const MY_WALLET = "UQCkenPqCgi46HS7KggGr_yHYFcPR6qC7gZnY7A-aC2aioS-";
+        const user = tele.initDataUnsafe.user;
+        const R_URL = "https://your-render-link.onrender.com"; 
+        const WALLET = "UQCkenPqCgi46HS7KggGr_yHYFcPR6qC7gZnY7A-aC2aioS-";
 
-        // Initialize TON Connect
         const tonConnectUI = new TONConnectUI.TonConnectUI({
-            manifestUrl: 'https://raw.githubusercontent.com/ton-community/tutorials/main/03-client/official/my-twa-manifest.json',
+            manifestUrl: 'https://your-github-io-link/manifest.json', // ⚠️ Update this
             buttonRootId: 'ton-connect'
         });
 
         async function load() {
-            try {
-                const response = await fetch(`${R_URL}/check_eligibility?user_id=${user.id}`);
-                const data = await response.json();
-                
-                document.getElementById('bal').innerText = data.bal.toFixed(4) + " TON";
-                document.getElementById('nrg').innerText = data.energy;
-                document.getElementById('lvl').innerText = data.level;
-                
-                // XP Bar Logic (Percentage of current level)
-                const xpPercent = data.xp % 100;
-                document.getElementById('xpF').style.width = xpPercent + "%";
+            const res = await (await fetch(`${R_URL}/check_eligibility?user_id=${user.id}`)).json();
+            document.getElementById('bal').innerText = res.bal.toFixed(4) + " TON";
+            document.getElementById('nrg').innerText = "⚡ " + res.energy + "/10";
+            document.getElementById('lvl').innerText = res.level;
+            document.getElementById('xpFill').style.width = (res.xp % 100) + "%";
+            
+            if(res.is_vip) {
+                document.getElementById('status').innerText = "VIP MEMBER 👑";
+                document.getElementById('vipBtn').style.display = "none";
+            }
 
-                if (data.is_vip) {
-                    document.getElementById('statusBadge').className = "badge badge-vip";
-                    document.getElementById('statusBadge').innerText = "VIP Member";
-                    document.getElementById('vipSection').style.display = "none";
-                }
-            } catch (err) { console.error("Load failed", err); }
+            const ranks = ["Novice", "Earner", "Hustler", "Whale", "King"];
+            document.getElementById('rank').innerText = ranks[Math.min(Math.floor(res.level/5), 4)].toUpperCase();
         }
 
         async function spin() {
-            // 1. Open Ad (Replace with your Adsterra Direct Link)
-            window.open("https://your-adsterra-link.com", "_blank");
-
-            // 2. Request Reward
-            try {
-                const res = await fetch(`${R_URL}/reward_spin`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ user_id: user.id })
-                });
-                const d = await res.json();
-                if (d.error) {
-                    alert("Out of Energy! Wait 30 mins.");
-                } else {
-                    tele.HapticFeedback.notificationOccurred('success');
-                    load();
-                }
-            } catch (e) { console.error("Spin error", e); }
+            tele.HapticFeedback.impactOccurred('medium');
+            window.open("https://your-adsterra-link.com", "_blank"); 
+            const res = await fetch(`${R_URL}/reward_spin`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: user.id })
+            });
+            const data = await res.json();
+            if(data.leveled_up) alert("LEVEL UP! 🚀");
+            load();
         }
 
         async function buyVIP() {
-            const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 600,
-                messages: [
-                    {
-                        address: MY_WALLET,
-                        amount: "500000000" // 0.5 TON
-                    }
-                ]
-            };
-
-            try {
-                const result = await tonConnectUI.sendTransaction(transaction);
-                // Inform user - in a real app, you'd send result.boc to backend to verify
-                alert("Transaction Sent! VIP will activate once confirmed.");
-                tele.close(); // Optional: Close and let them reopen to refresh
-            } catch (e) {
-                console.error("Payment failed", e);
-                alert("Payment Canceled");
-            }
+            const tx = { validUntil: Math.floor(Date.now()/1000)+600, messages: [{ address: WALLET, amount: "500000000" }] };
+            try { await tonConnectUI.sendTransaction(tx); alert("Payment Sent!"); }
+            catch(e) { alert("Canceled"); }
         }
 
-        // Initialize
-        tele.ready();
-        tele.expand();
+        function share() {
+            const link = `https://t.me/YourBotName?start=${user.id}`;
+            tele.switchInlineQuery(`Join MyEarn and win TON! 🎰\n${link}`);
+        }
+
         load();
+        tele.expand();
     </script>
 </body>
 </html>
