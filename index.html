@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://js.onclckvd.com/in-stream-ad-admanager/tma.js"></script>
     <style>
         body { background: #0b0e11; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 15px; }
         .card { background: #1c1f24; border-radius: 20px; padding: 20px; margin: 15px 0; border: 1px solid #2d333b; }
@@ -13,18 +12,17 @@
         button { background: #0088cc; color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         button:disabled { background: #2d333b; color: #57606a; }
         input, textarea { width: 95%; background: #000; color: #0088cc; border: 1px solid #333; padding: 12px; border-radius: 10px; margin-top: 10px; text-align: center; font-size: 14px; box-sizing: border-box; }
-        .lb-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2d333b; font-size: 13px; }
         .status-badge { padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; }
-        #adminPanel { border: 2px dashed #e63946; display: none; }
+        #adminPanel { border: 2px dashed #e63946; display: none; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <h2>💎 MyEarn TON V3</h2>
+    <h2>💎 MyEarn TON V3.1</h2>
     
     <div class="card">
         <div style="color: #8a919e; font-size: 12px;">WALLET BALANCE</div>
         <div id="bal" class="bal-val">0.0000 TON</div>
-        <button id="adBtn" onclick="playAd()" disabled>Loading Ad Engine...</button>
+        <button id="adBtn" onclick="playAd()">🎥 Watch Ad & Earn</button>
     </div>
 
     <div class="card">
@@ -32,108 +30,105 @@
         <div class="req-item" id="sub-status">❌ Join Channel</div>
         <div class="req-item" id="ref-status">❌ Invite 3 Friends (0/3)</div>
         <input type="text" id="walletAddr" placeholder="Paste TON Address">
-        <button id="withdrawBtn" onclick="requestWithdraw()" disabled>Request Withdrawal</button>
+        <button id="withdrawBtn" onclick="requestWithdraw()" disabled style="background:#2d333b">Request Withdrawal</button>
     </div>
 
     <div class="card">
-        <div style="color: #8a919e; font-size: 12px; margin-bottom: 10px;">📜 HISTORY</div>
-        <div id="history-list" style="font-size: 12px;">No records.</div>
-    </div>
-
-    <div class="card">
-        <div style="color: #8a919e; font-size: 12px; margin-bottom: 10px;">🏆 TOP EARNERS</div>
-        <div id="leaderboard-list">Loading...</div>
+        <div style="color: #8a919e; font-size: 12px; margin-bottom: 10px;">📜 WITHDRAWAL HISTORY</div>
+        <div id="history-list" style="font-size: 12px; text-align: left;">No records found.</div>
     </div>
 
     <div id="adminPanel" class="card">
-        <div style="color: #e63946; font-weight: bold;">🛠 ADMIN BROADCAST</div>
-        <textarea id="bcMsg" placeholder="Message to everyone..."></textarea>
-        <button onclick="sendBroadcast()" id="bcBtn" style="background: #e63946;">🚀 SEND TO ALL</button>
+        <div style="color: #e63946; font-weight: bold;">🛠 ADMIN PANEL</div>
+        <textarea id="bcMsg" placeholder="Message to everyone..." style="height: 80px;"></textarea>
+        <button onclick="sendBroadcast()" id="bcBtn" style="background: #e63946;">🚀 SEND BROADCAST</button>
     </div>
 
     <script>
         const tele = window.Telegram.WebApp;
         const RENDER_URL = "https://telegramadsbot-jzso.onrender.com";
+        const AD_URL = "https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
         const MY_ADMIN_ID = "5401881400"; 
         const user = tele.initDataUnsafe?.user;
 
-        // --- AD INITIALIZATION ---
-        window.initCdTma?.({ id: '432115' }).then(show => {
-            window.showAd = show; // Store the function properly
-            const btn = document.getElementById('adBtn');
-            btn.disabled = false;
-            btn.innerText = "🎥 Watch Ad & Earn";
-        }).catch(err => {
-            document.getElementById('adBtn').innerText = "Ads Blocked/Offline";
-            console.error("Ad Init Failed:", err);
-        });
-
         async function loadApp() {
             if (!user) return;
+            // Admin Check
             if (String(user.id) === MY_ADMIN_ID) document.getElementById('adminPanel').style.display = 'block';
             
             try {
+                // Fetch User Stats
                 const res = await fetch(`${RENDER_URL}/check_eligibility?user_id=${user.id}`);
                 const data = await res.json();
+                
                 document.getElementById('bal').innerText = data.bal.toFixed(4) + " TON";
                 
+                // Update Sub Status
                 document.getElementById('sub-status').innerText = data.is_subbed ? "✅ Subscribed" : "❌ Join Channel";
                 document.getElementById('sub-status').style.color = data.is_subbed ? "#7cfc00" : "#ff4d4d";
+                
+                // Update Ref Status
                 document.getElementById('ref-status').innerText = `${data.ref_count >= 3 ? '✅' : '❌'} Invite 3 Friends (${data.ref_count}/3)`;
                 document.getElementById('ref-status').style.color = data.ref_count >= 3 ? "#7cfc00" : "#ff4d4d";
 
+                // Unlock Withdrawal Button
                 if (data.eligible) {
                     const wBtn = document.getElementById('withdrawBtn');
-                    wBtn.disabled = false; wBtn.style.background = "#0088cc";
+                    wBtn.disabled = false; 
+                    wBtn.style.background = "#0088cc";
                 }
 
+                // Load History
                 const histRes = await fetch(`${RENDER_URL}/history?user_id=${user.id}`);
                 const histData = await histRes.json();
                 if (histData.length > 0) {
                     document.getElementById('history-list').innerHTML = histData.map(h => `
-                        <div style="border-bottom:1px solid #333; padding:5px 0; display:flex; justify-content:space-between;">
+                        <div style="border-bottom:1px solid #333; padding:8px 0; display:flex; justify-content:space-between;">
                             <span>${h.amount.toFixed(4)} TON</span>
                             <span class="status-badge" style="color:${h.status==='Pending'?'#ffa500':'#7cfc00'}">${h.status}</span>
                         </div>`).join('');
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Load Error:", e); }
         }
 
-        async function playAd() {
-            if (typeof window.showAd !== 'function') {
-                return tele.showAlert("Ad not ready yet. Please wait 5 seconds.");
-            }
-
+        function playAd() {
             const btn = document.getElementById('adBtn');
             btn.disabled = true;
-            btn.innerText = "🎬 Opening...";
+            btn.innerText = "🎬 Opening Ad...";
 
-            try {
-                await window.showAd(); 
-                // Reward only if ad finishes
-                const res = await fetch(`${RENDER_URL}/reward?user_id=${user.id}`);
-                const data = await res.json();
-                document.getElementById('bal').innerText = data.new_bal.toFixed(4) + " TON";
-                tele.showAlert("Success! +0.0002 TON");
-            } catch (e) {
-                tele.showAlert("Ad failed or closed early.");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "🎥 Watch Ad & Earn";
-                loadApp();
-            }
+            // 1. Open Adsterra link
+            tele.openLink(AD_URL);
+
+            // 2. Wait 3 seconds then reward
+            setTimeout(async () => {
+                try {
+                    const res = await fetch(`${RENDER_URL}/reward?user_id=${user.id}`);
+                    const data = await res.json();
+                    document.getElementById('bal').innerText = data.new_bal.toFixed(4) + " TON";
+                    tele.showAlert("Success! +0.0002 TON rewarded.");
+                    tele.HapticFeedback.notificationOccurred('success');
+                } catch (e) {
+                    tele.showAlert("Reward error. Please try again.");
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = "🎥 Watch Ad & Earn";
+                    loadApp();
+                }
+            }, 3000);
         }
 
         async function requestWithdraw() {
             const addr = document.getElementById('walletAddr').value;
-            if (addr.length < 10) return tele.showAlert("Paste your TON address first!");
+            if (addr.length < 10) return tele.showAlert("Please enter a valid TON address!");
+            
             const res = await fetch(`${RENDER_URL}/withdraw`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ user_id: user.id, address: addr })
             });
             const data = await res.json();
             if (data.status === "ok") {
-                tele.showAlert("Requested! Check history.");
+                tele.showAlert("Withdrawal requested! Please wait for admin approval.");
                 loadApp();
             } else { tele.showAlert(data.error); }
         }
@@ -147,9 +142,12 @@
             });
             const data = await res.json();
             tele.showAlert(`Sent to ${data.total} users.`);
+            document.getElementById('bcMsg').value = "";
         }
 
-        tele.ready(); tele.expand(); loadApp();
+        tele.ready();
+        tele.expand();
+        loadApp();
     </script>
 </body>
 </html>
