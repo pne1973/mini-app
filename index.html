@@ -1,109 +1,85 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --tg-theme-bg: #0d1117; --primary: #0088cc; }
-        body { font-family: sans-serif; background: var(--tg-theme-bg); color: #fff; margin: 0; text-align: center; }
-        .card { background: #1c1f24; border-radius: 15px; padding: 15px; margin: 10px; border: 1px solid #30363d; }
-        
-        /* Level & XP */
-        .xp-bar-bg { width: 100%; height: 8px; background: #2d333b; border-radius: 4px; margin-top: 5px; overflow: hidden; }
-        .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #0088cc, #00ffcc); width: 0%; transition: width 0.5s; }
-        
-        /* Shoutbox */
-        .shoutbox { background: rgba(0,0,0,0.5); height: 35px; display: flex; align-items: center; overflow: hidden; border-bottom: 1px solid #333; }
-        .shout-track { display: inline-block; white-space: nowrap; animation: marquee 15s linear infinite; }
-        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-        
-        /* Overlays */
-        .overlay { position: fixed; top: 0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:999; display:none; flex-direction:column; align-items:center; justify-content:center; }
-        .ach-card { background:#1c1f24; border:2px solid #f1c40f; padding:30px; border-radius:20px; width:80%; }
-        
-        .btn-main { background: var(--primary); color: #fff; border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; }
-        .share-btn { background: linear-gradient(45deg, #ff00cc, #3333ff); margin-top: 10px; }
+        body { font-family: sans-serif; background: #0d1117; color: #fff; text-align: center; margin: 0; }
+        .card { background: #1c1f24; border-radius: 15px; padding: 15px; margin: 10px; border: 1px solid #333; }
+        .xp-bar { width: 100%; height: 8px; background: #2d333b; border-radius: 4px; overflow: hidden; margin: 10px 0; }
+        .xp-fill { height: 100%; background: #0088cc; width: 0%; transition: 0.5s; }
+        .shoutbox { background: rgba(0,0,0,0.5); height: 30px; overflow: hidden; display: flex; align-items: center; }
+        .marquee { white-space: nowrap; animation: scroll 15s linear infinite; }
+        @keyframes scroll { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:999; }
+        .btn { background: #0088cc; color: #fff; border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; margin: 5px 0; }
+        .vip-card { border: 2px solid #f1c40f; background: linear-gradient(135deg, #1c1f24, #2c3e50); }
     </style>
 </head>
 <body>
-
-    <div class="shoutbox" onclick="sendShout()">
-        <div id="shoutTrack" class="shout-track">🌐 Welcome! Tap here to shout to the world...</div>
-    </div>
-
+    <div class="shoutbox" onclick="promptShout()"><div id="shout" class="marquee">🌐 Welcome to MyEarn Live Feed!</div></div>
+    
     <div class="card">
-        <div style="font-size: 12px; color: #8a919e;">YOUR BALANCE</div>
-        <div id="bal" style="font-size: 32px; font-weight: bold;">0.0000 TON</div>
-        
-        <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:15px;">
+        <div style="font-size: 10px; color: #8a919e;">BALANCE</div>
+        <div id="bal" style="font-size: 28px; font-weight: bold;">0.0000 TON</div>
+        <div class="xp-bar"><div id="xpF" class="xp-fill"></div></div>
+        <div style="display:flex; justify-content:space-between; font-size:10px;">
             <span>LVL <span id="lvl">1</span></span>
-            <span id="timer">FULL</span>
+            <span id="timer">RECHARGING...</span>
         </div>
-        <div class="xp-bar-bg"><div id="xpFill" class="xp-bar-fill"></div></div>
     </div>
 
     <div class="card">
-        <button class="btn-main" onclick="spin()">🎰 WATCH AD & SPIN</button>
-        <button id="ticketBtn" class="btn-main" style="background:#34495e; margin-top:10px;" onclick="spin(true)">🎫 USE TICKET (AD-FREE)</button>
+        <button class="btn" onclick="spin()">🎰 WATCH AD & SPIN</button>
+        <button id="tBtn" class="btn" style="background:#34495e" onclick="spin(true)">🎫 NO TICKETS</button>
     </div>
 
-    <div class="card">
-        <button class="btn-main share-btn" onclick="shareApp()">🚀 SHARE FOR +5 ENERGY ⚡</button>
+    <div class="card vip-card">
+        <div style="color:#f1c40f; font-weight:bold;">👑 VIP UPGRADE</div>
+        <button class="btn" style="background:#f1c40f; color:#000;" onclick="buyVIP()">0.5 TON - 2X REWARDS</button>
     </div>
 
-    <div id="achOverlay" class="overlay">
-        <div class="ach-card">
-            <h2 id="achTitle">LEVEL UP!</h2>
-            <p id="achDesc">You unlocked a new reward tier.</p>
-            <button class="btn-main" onclick="closeAch()">AWESOME</button>
+    <button class="btn" style="background:linear-gradient(90deg, #ff00cc, #3333ff);" onclick="share()">🚀 SHARE FOR +5 ENERGY</button>
+
+    <div id="ach" class="overlay">
+        <div class="card" style="width:80%;">
+            <h2 id="at">!</h2><p id="ad">!</p>
+            <button class="btn" onclick="closeAch()">COLLECT</button>
         </div>
     </div>
 
     <script>
         const tele = window.Telegram.WebApp;
-        const RENDER_URL = "https://your-app.onrender.com";
+        const R_URL = "YOUR_BACKEND_URL";
         const user = tele.initDataUnsafe.user;
 
-        async function loadData() {
-            const res = await (await fetch(`${RENDER_URL}/check_eligibility?user_id=${user.id}`)).json();
+        async function load() {
+            const res = await (await fetch(`${R_URL}/check_eligibility?user_id=${user.id}`)).json();
             document.getElementById('bal').innerText = res.bal.toFixed(4) + " TON";
             document.getElementById('lvl').innerText = res.level;
-            document.getElementById('xpFill').style.width = (res.xp % 100) + "%";
-            
+            document.getElementById('xpF').style.width = (res.xp % 100) + "%";
             if(res.tickets > 0) {
-                document.getElementById('ticketBtn').style.background = "#8e44ad";
-                document.getElementById('ticketBtn').innerText = `🎫 USE TICKET (${res.tickets})`;
+                document.getElementById('tBtn').style.background = "#8e44ad";
+                document.getElementById('tBtn').innerText = `🎫 USE TICKET (${res.tickets})`;
             }
         }
 
-        async function spin(isTicket = false) {
-            tele.HapticFeedback.impactOccurred('medium');
-            // Logic for Adsterra would go here
-            const res = await fetch(`${RENDER_URL}/reward_spin`, {
+        async function spin(t = false) {
+            // Place Adsterra code here
+            const r = await fetch(`${R_URL}/reward_spin`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user_id: user.id, use_ticket: isTicket })
+                body: JSON.stringify({ user_id: user.id, use_ticket: t })
             });
-            const data = await res.json();
-            if(data.leveled_up) showAch("LEVEL UP!", `You are now Level ${data.level}!`, "BONUS INCREASED");
-            loadData();
+            const d = await r.json();
+            if(d.leveled_up) showAch("LEVEL UP!", `You reached Level ${d.level}!`);
+            load();
         }
 
-        function showAch(t, d) {
-            document.getElementById('achTitle').innerText = t;
-            document.getElementById('achDesc').innerText = d;
-            document.getElementById('achOverlay').style.display = 'flex';
-        }
-        function closeAch() { document.getElementById('achOverlay').style.display = 'none'; }
+        function showAch(t,d){ document.getElementById('at').innerText=t; document.getElementById('ad').innerText=d; document.getElementById('ach').style.display='flex'; tele.HapticFeedback.notificationOccurred('success'); }
+        function closeAch(){ document.getElementById('ach').style.display='none'; }
+        function share(){ tele.switchInlineQuery("Join MyEarn! 🎰", ['groups']); }
         
-        function shareApp() {
-            const text = "💎 Join me on MyEarn! Win real TON for free! 🎰";
-            tele.switchInlineQuery(text, ['groups', 'channels']);
-            // Call /reward_share endpoint...
-        }
-
-        loadData();
+        load();
         tele.ready();
     </script>
 </body>
