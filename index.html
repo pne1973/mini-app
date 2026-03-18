@@ -13,29 +13,35 @@
         button { background: #0088cc; color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         button:disabled { background: #2d333b; color: #57606a; }
         input { width: 90%; background: #000; color: #0088cc; border: 1px solid #333; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: center; font-size: 12px; }
+        .lb-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2d333b; font-size: 13px; }
     </style>
 </head>
 <body>
     <h2>💎 MyEarn TON</h2>
     
     <div class="card">
-        <div style="color: #8a919e; font-size: 12px;">BALANCE</div>
+        <div style="color: #8a919e; font-size: 12px;">WALLET BALANCE</div>
         <div id="bal" class="bal-val">0.0000 TON</div>
         <button id="adBtn" onclick="playAd()" disabled>Loading Ads...</button>
     </div>
 
     <div class="card">
-        <div style="color: #8a919e; font-size: 12px;">WITHDRAWAL LOCK</div>
+        <div style="color: #8a919e; font-size: 12px;">WITHDRAWAL REQUIREMENTS</div>
         <div class="req-item" id="sub-status">❌ Join Channel</div>
         <div class="req-item" id="ref-status">❌ Invite 3 Friends (0/3)</div>
-        <button onclick="window.open('https://t.me/+f0K9uT_R-m8zNTlk', '_blank')" style="background: #222; font-size: 13px;">📢 Open Channel</button>
+        <button onclick="window.open('https://t.me/c/3836027199', '_blank')" style="background: #222; font-size: 13px;">📢 Open Channel</button>
         <button id="withdrawBtn" onclick="requestWithdraw()" disabled>Withdraw TON</button>
     </div>
 
     <div class="card">
-        <div style="color: #8a919e; font-size: 12px;">REFERRED BY YOU</div>
+        <div style="color: #8a919e; font-size: 12px;">YOUR INVITE LINK</div>
         <input type="text" id="refLink" readonly>
-        <button onclick="copyRef()" style="background: #333; font-size: 13px;">Copy Invite Link</button>
+        <button onclick="copyRef()" style="background: #333; font-size: 13px;">Copy Link</button>
+    </div>
+
+    <div class="card">
+        <div style="color: #8a919e; font-size: 12px; margin-bottom: 10px;">🏆 TOP 10 EARNERS</div>
+        <div id="leaderboard-list">Loading rankings...</div>
     </div>
 
     <script>
@@ -43,29 +49,26 @@
         const RENDER_URL = "https://telegramadsbot-jzso.onrender.com";
         const user = tele.initDataUnsafe?.user;
 
-        // 1. Init OnClickA (ID 432115)
+        // Init OnClickA
         window.initCdTma?.({ id: '432115' }).then(show => {
             window.show = show;
             document.getElementById('adBtn').disabled = false;
             document.getElementById('adBtn').innerText = "🎥 Watch Ad & Earn";
         }).catch(e => document.getElementById('adBtn').innerText = "Ads Offline");
 
-        // 2. Load Data & Checks
-        async function loadAll() {
+        async function loadApp() {
             if (!user) return;
             document.getElementById('refLink').value = `https://t.me/telegramadsbot-jzso?start=${user.id}`;
             
             try {
-                // Fetch Bal & Eligibility
+                // Fetch User Status
                 const res = await fetch(`${RENDER_URL}/check_eligibility?user_id=${user.id}`);
                 const data = await res.json();
-                
                 document.getElementById('bal').innerText = data.bal.toFixed(4) + " TON";
                 
-                // Update Requirements UI
+                // Requirement UI
                 document.getElementById('sub-status').innerText = data.is_subbed ? "✅ Subscribed" : "❌ Join Channel";
                 document.getElementById('sub-status').style.color = data.is_subbed ? "#7cfc00" : "#ff4d4d";
-                
                 document.getElementById('ref-status').innerText = `${data.ref_count >= 3 ? '✅' : '❌'} Invite 3 Friends (${data.ref_count}/3)`;
                 document.getElementById('ref-status').style.color = data.ref_count >= 3 ? "#7cfc00" : "#ff4d4d";
 
@@ -73,6 +76,18 @@
                     const wBtn = document.getElementById('withdrawBtn');
                     wBtn.disabled = false; wBtn.style.background = "#0088cc";
                 }
+
+                // Fetch Leaderboard
+                const lbRes = await fetch(`${RENDER_URL}/leaderboard`);
+                const lbData = await lbRes.json();
+                const lbList = document.getElementById('leaderboard-list');
+                lbList.innerHTML = lbData.map((u, i) => `
+                    <div class="lb-row">
+                        <span>${i < 3 ? ['🥇','🥈','🥉'][i] : i+1} User ${u.name}</span>
+                        <span style="color:#0088cc; font-weight:bold;">${u.bal.toFixed(4)}</span>
+                    </div>
+                `).join('');
+
             } catch (e) { console.error(e); }
         }
 
@@ -89,14 +104,14 @@
         function copyRef() {
             document.getElementById("refLink").select();
             document.execCommand("copy");
-            tele.showAlert("Link Copied! Share it to get 3 referrals.");
+            tele.showAlert("Copied! Now share it with 3 people.");
         }
 
         function requestWithdraw() {
-            tele.showPopup({ title: 'Withdraw', message: 'Enter your TON address:', buttons: [{type: 'ok', text: 'Submit'}] });
+            tele.showPopup({ title: 'Withdrawal', message: 'Enter your TON address:', buttons: [{type: 'ok', text: 'Submit'}] });
         }
 
-        tele.ready(); tele.expand(); loadAll();
+        tele.ready(); tele.expand(); loadApp();
     </script>
 </body>
 </html>
