@@ -14,7 +14,7 @@
         button:disabled { background: #2d333b; color: #57606a; }
         input, textarea { width: 95%; background: #000; color: #0088cc; border: 1px solid #333; padding: 12px; border-radius: 10px; margin-top: 10px; text-align: center; font-size: 14px; box-sizing: border-box; }
         .lb-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2d333b; font-size: 13px; }
-        .status-badge { padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .status-badge { padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; }
         #adminPanel { border: 2px dashed #e63946; display: none; }
     </style>
 </head>
@@ -24,31 +24,24 @@
     <div class="card">
         <div style="color: #8a919e; font-size: 12px;">WALLET BALANCE</div>
         <div id="bal" class="bal-val">0.0000 TON</div>
-        <button id="adBtn" onclick="playAd()" disabled>Loading Ads...</button>
+        <button id="adBtn" onclick="playAd()" disabled>Loading Ad Engine...</button>
     </div>
 
     <div class="card">
         <div style="color: #8a919e; font-size: 12px;">WITHDRAWAL LOCK</div>
         <div class="req-item" id="sub-status">❌ Join Channel</div>
         <div class="req-item" id="ref-status">❌ Invite 3 Friends (0/3)</div>
-        <button onclick="window.open('https://t.me/+f0K9uT_R-m8zNTlk', '_blank')" style="background: #222; font-size: 13px;">📢 Open Channel</button>
-        <input type="text" id="walletAddr" placeholder="Paste TON Address Here">
+        <input type="text" id="walletAddr" placeholder="Paste TON Address">
         <button id="withdrawBtn" onclick="requestWithdraw()" disabled>Request Withdrawal</button>
     </div>
 
     <div class="card">
-        <div style="color: #8a919e; font-size: 12px; margin-bottom: 10px;">📜 WITHDRAWAL HISTORY</div>
-        <div id="history-list" style="font-size: 12px; text-align: left;">No requests yet.</div>
+        <div style="color: #8a919e; font-size: 12px; margin-bottom: 10px;">📜 HISTORY</div>
+        <div id="history-list" style="font-size: 12px;">No records.</div>
     </div>
 
     <div class="card">
-        <div style="color: #8a919e; font-size: 12px;">YOUR INVITE LINK</div>
-        <input type="text" id="refLink" readonly>
-        <button onclick="copyRef()" style="background: #333; font-size: 13px;">Copy Link</button>
-    </div>
-
-    <div class="card">
-        <div style="color: #8a919e; font-size: 12px; margin-bottom: 10px;">🏆 TOP 10 EARNERS</div>
+        <div style="color: #8a919e; font-size: 12px; margin-bottom: 10px;">🏆 TOP EARNERS</div>
         <div id="leaderboard-list">Loading...</div>
     </div>
 
@@ -64,15 +57,19 @@
         const MY_ADMIN_ID = "5401881400"; 
         const user = tele.initDataUnsafe?.user;
 
+        // --- AD INITIALIZATION ---
         window.initCdTma?.({ id: '432115' }).then(show => {
-            window.show = show;
-            document.getElementById('adBtn').disabled = false;
-            document.getElementById('adBtn').innerText = "🎥 Watch Ad & Earn";
-        }).catch(() => document.getElementById('adBtn').innerText = "Ads Offline");
+            window.showAd = show; // Store the function properly
+            const btn = document.getElementById('adBtn');
+            btn.disabled = false;
+            btn.innerText = "🎥 Watch Ad & Earn";
+        }).catch(err => {
+            document.getElementById('adBtn').innerText = "Ads Blocked/Offline";
+            console.error("Ad Init Failed:", err);
+        });
 
         async function loadApp() {
             if (!user) return;
-            document.getElementById('refLink').value = `https://t.me/telegramadsbot-jzso?start=${user.id}`;
             if (String(user.id) === MY_ADMIN_ID) document.getElementById('adminPanel').style.display = 'block';
             
             try {
@@ -90,73 +87,66 @@
                     wBtn.disabled = false; wBtn.style.background = "#0088cc";
                 }
 
-                // Load History
                 const histRes = await fetch(`${RENDER_URL}/history?user_id=${user.id}`);
                 const histData = await histRes.json();
                 if (histData.length > 0) {
                     document.getElementById('history-list').innerHTML = histData.map(h => `
                         <div style="border-bottom:1px solid #333; padding:5px 0; display:flex; justify-content:space-between;">
-                            <span>${h.amount} TON</span>
-                            <span class="status-badge" style="background:${h.status==='Pending'?'#ffa500':'#7cfc00'}">${h.status}</span>
+                            <span>${h.amount.toFixed(4)} TON</span>
+                            <span class="status-badge" style="color:${h.status==='Pending'?'#ffa500':'#7cfc00'}">${h.status}</span>
                         </div>`).join('');
                 }
-
-                // Load Leaderboard
-                const lbRes = await fetch(`${RENDER_URL}/leaderboard`);
-                const lbData = await lbRes.json();
-                document.getElementById('leaderboard-list').innerHTML = lbData.map((u, i) => `
-                    <div class="lb-row">
-                        <span>${i < 3 ? ['🥇','🥈','🥉'][i] : i+1} User ${u.name}</span>
-                        <span style="color:#0088cc; font-weight:bold;">${u.bal.toFixed(4)}</span>
-                    </div>`).join('');
             } catch (e) { console.error(e); }
         }
 
         async function playAd() {
-            if (!window.show) return;
-            window.show().then(async () => {
+            if (typeof window.showAd !== 'function') {
+                return tele.showAlert("Ad not ready yet. Please wait 5 seconds.");
+            }
+
+            const btn = document.getElementById('adBtn');
+            btn.disabled = true;
+            btn.innerText = "🎬 Opening...";
+
+            try {
+                await window.showAd(); 
+                // Reward only if ad finishes
                 const res = await fetch(`${RENDER_URL}/reward?user_id=${user.id}`);
                 const data = await res.json();
                 document.getElementById('bal').innerText = data.new_bal.toFixed(4) + " TON";
-                tele.HapticFeedback.notificationOccurred('success');
+                tele.showAlert("Success! +0.0002 TON");
+            } catch (e) {
+                tele.showAlert("Ad failed or closed early.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "🎥 Watch Ad & Earn";
                 loadApp();
-            }).catch(() => tele.showAlert("Watch full video to earn!"));
+            }
         }
 
         async function requestWithdraw() {
             const addr = document.getElementById('walletAddr').value;
-            if (addr.length < 10) return tele.showAlert("Invalid Wallet Address!");
-            
+            if (addr.length < 10) return tele.showAlert("Paste your TON address first!");
             const res = await fetch(`${RENDER_URL}/withdraw`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ user_id: user.id, address: addr })
             });
             const data = await res.json();
             if (data.status === "ok") {
-                tele.showAlert("Withdrawal requested! It will be reviewed by admin.");
+                tele.showAlert("Requested! Check history.");
                 loadApp();
-            } else {
-                tele.showAlert(data.error);
-            }
+            } else { tele.showAlert(data.error); }
         }
 
         async function sendBroadcast() {
             const msg = document.getElementById('bcMsg').value;
-            if (!msg || !confirm("Broadcast to all?")) return;
-            document.getElementById('bcBtn').innerText = "Sending...";
+            if (!msg) return;
             const res = await fetch(`${RENDER_URL}/broadcast`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ admin_id: user.id, message: msg })
             });
             const data = await res.json();
             tele.showAlert(`Sent to ${data.total} users.`);
-            document.getElementById('bcBtn').innerText = "🚀 SEND TO ALL";
-        }
-
-        function copyRef() {
-            document.getElementById("refLink").select();
-            document.execCommand("copy");
-            tele.showAlert("Link Copied!");
         }
 
         tele.ready(); tele.expand(); loadApp();
