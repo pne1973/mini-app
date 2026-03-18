@@ -5,85 +5,98 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://js.onclckvd.com/in-stream-ad-admanager/tma.js"></script>
-    
     <style>
-        body { background: #0b0e11; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; text-align: center; margin: 0; padding: 20px; }
-        .header { margin-top: 20px; font-weight: bold; font-size: 20px; color: #0088cc; }
-        .card { background: #1c1f24; border-radius: 24px; padding: 35px; margin: 30px 0; border: 1px solid #2d333b; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .bal-label { color: #8a919e; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-        .bal-val { font-size: 38px; color: #ffffff; font-weight: 800; }
-        .ton-unit { font-size: 18px; color: #0088cc; margin-left: 5px; }
-        #adBtn { background: #0088cc; color: white; border: none; padding: 18px; border-radius: 16px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        #adBtn:disabled { background: #2d333b; color: #57606a; cursor: not-allowed; }
-        #adBtn:active { transform: scale(0.96); }
+        body { background: #0b0e11; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 15px; }
+        .card { background: #1c1f24; border-radius: 20px; padding: 20px; margin: 15px 0; border: 1px solid #2d333b; }
+        .bal-val { font-size: 36px; color: #0088cc; font-weight: bold; margin: 10px 0; }
+        .req-item { font-size: 14px; margin: 8px 0; text-align: left; padding-left: 10%; }
+        button { background: #0088cc; color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:disabled { background: #2d333b; color: #57606a; }
+        input { width: 90%; background: #000; color: #0088cc; border: 1px solid #333; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: center; font-size: 12px; }
     </style>
 </head>
 <body>
-    <div class="header">💎 MYEARN TON</div>
+    <h2>💎 MyEarn TON</h2>
     
     <div class="card">
-        <div class="bal-label">Current Balance</div>
-        <div id="bal" class="bal-val">0.0000<span class="ton-unit">TON</span></div>
+        <div style="color: #8a919e; font-size: 12px;">BALANCE</div>
+        <div id="bal" class="bal-val">0.0000 TON</div>
+        <button id="adBtn" onclick="playAd()" disabled>Loading Ads...</button>
     </div>
 
-    <button id="adBtn" onclick="playAd()" disabled>Initializing Ads...</button>
+    <div class="card">
+        <div style="color: #8a919e; font-size: 12px;">WITHDRAWAL LOCK</div>
+        <div class="req-item" id="sub-status">❌ Join Channel</div>
+        <div class="req-item" id="ref-status">❌ Invite 3 Friends (0/3)</div>
+        <button onclick="window.open('https://t.me/+f0K9uT_R-m8zNTlk', '_blank')" style="background: #222; font-size: 13px;">📢 Open Channel</button>
+        <button id="withdrawBtn" onclick="requestWithdraw()" disabled>Withdraw TON</button>
+    </div>
+
+    <div class="card">
+        <div style="color: #8a919e; font-size: 12px;">REFERRED BY YOU</div>
+        <input type="text" id="refLink" readonly>
+        <button onclick="copyRef()" style="background: #333; font-size: 13px;">Copy Invite Link</button>
+    </div>
 
     <script>
         const tele = window.Telegram.WebApp;
         const RENDER_URL = "https://telegramadsbot-jzso.onrender.com";
         const user = tele.initDataUnsafe?.user;
 
-        // 1. Initialize OnClickA with your ID: 432115
-        window.initCdTma?.({ id: '432115' })
-            .then(show => {
-                window.show = show;
-                document.getElementById('adBtn').disabled = false;
-                document.getElementById('adBtn').innerText = "🎥 Watch Ad & Earn";
-            })
-            .catch(e => {
-                console.error("Ad Engine Failed:", e);
-                document.getElementById('adBtn').innerText = "Ads Offline";
-            });
+        // 1. Init OnClickA (ID 432115)
+        window.initCdTma?.({ id: '432115' }).then(show => {
+            window.show = show;
+            document.getElementById('adBtn').disabled = false;
+            document.getElementById('adBtn').innerText = "🎥 Watch Ad & Earn";
+        }).catch(e => document.getElementById('adBtn').innerText = "Ads Offline");
 
-        // 2. Fetch User Data
-        async function loadData() {
+        // 2. Load Data & Checks
+        async function loadAll() {
             if (!user) return;
+            document.getElementById('refLink').value = `https://t.me/telegramadsbot-jzso?start=${user.id}`;
+            
             try {
-                const res = await fetch(`${RENDER_URL}/get_user_info?user_id=${user.id}`);
+                // Fetch Bal & Eligibility
+                const res = await fetch(`${RENDER_URL}/check_eligibility?user_id=${user.id}`);
                 const data = await res.json();
-                document.getElementById('bal').innerHTML = `${data.bal.toFixed(4)}<span class="ton-unit">TON</span>`;
-            } catch (e) { console.error("Data Load Error:", e); }
+                
+                document.getElementById('bal').innerText = data.bal.toFixed(4) + " TON";
+                
+                // Update Requirements UI
+                document.getElementById('sub-status').innerText = data.is_subbed ? "✅ Subscribed" : "❌ Join Channel";
+                document.getElementById('sub-status').style.color = data.is_subbed ? "#7cfc00" : "#ff4d4d";
+                
+                document.getElementById('ref-status').innerText = `${data.ref_count >= 3 ? '✅' : '❌'} Invite 3 Friends (${data.ref_count}/3)`;
+                document.getElementById('ref-status').style.color = data.ref_count >= 3 ? "#7cfc00" : "#ff4d4d";
+
+                if (data.eligible) {
+                    const wBtn = document.getElementById('withdrawBtn');
+                    wBtn.disabled = false; wBtn.style.background = "#0088cc";
+                }
+            } catch (e) { console.error(e); }
         }
 
-        // 3. Play Ad and Reward
         async function playAd() {
             if (!window.show) return;
-
-            // Show the Ad
-            window.show()
-                .then(async () => {
-                    // Ad finished successfully! Talk to Render.
-                    try {
-                        const res = await fetch(`${RENDER_URL}/reward?user_id=${user.id}`);
-                        const data = await res.json();
-                        if (data.status === "ok") {
-                            document.getElementById('bal').innerHTML = `${data.new_bal.toFixed(4)}<span class="ton-unit">TON</span>`;
-                            tele.HapticFeedback.notificationOccurred('success');
-                        }
-                    } catch (err) {
-                        tele.showAlert("Reward system error. Your progress is saved.");
-                    }
-                })
-                .catch(e => {
-                    // User closed the ad too early or error occurred
-                    tele.showAlert("Ad not completed. Watch fully to earn TON!");
-                });
+            window.show().then(async () => {
+                const res = await fetch(`${RENDER_URL}/reward?user_id=${user.id}`);
+                const data = await res.json();
+                document.getElementById('bal').innerText = data.new_bal.toFixed(4) + " TON";
+                tele.HapticFeedback.notificationOccurred('success');
+            }).catch(e => tele.showAlert("Watch the full ad to earn!"));
         }
 
-        // Setup App
-        tele.ready();
-        tele.expand();
-        loadData();
+        function copyRef() {
+            document.getElementById("refLink").select();
+            document.execCommand("copy");
+            tele.showAlert("Link Copied! Share it to get 3 referrals.");
+        }
+
+        function requestWithdraw() {
+            tele.showPopup({ title: 'Withdraw', message: 'Enter your TON address:', buttons: [{type: 'ok', text: 'Submit'}] });
+        }
+
+        tele.ready(); tele.expand(); loadAll();
     </script>
 </body>
 </html>
