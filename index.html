@@ -16,34 +16,26 @@
             --gold: #ffaa00;
         }
 
-        /* RESET & CENTER LOGIC */
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        html, body { 
-            height: 100%; 
-            width: 100%;
-            background: var(--bg);
-            overflow-x: hidden;
-            display: flex;
-            justify-content: center; /* Centers horizontally */
-        }
-
         body { 
+            background: var(--bg);
             color: #fff; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
             padding: 20px 16px;
         }
 
-        /* MAIN WRAPPER - This makes it look like a centered app */
         .app-container {
             width: 100%;
-            max-width: 420px; /* Perfect width for Telegram mobile */
+            max-width: 420px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        /* GLASS CARD STYLING */
         .glass-card { 
             background: var(--card); 
             padding: 24px; 
@@ -55,7 +47,6 @@
             text-align: center;
         }
 
-        /* TABS */
         .tabs { 
             display: flex; 
             gap: 8px; 
@@ -65,6 +56,7 @@
             border-radius: 16px;
             width: 100%;
         }
+
         .tab { 
             flex: 1; 
             padding: 12px; 
@@ -77,9 +69,9 @@
             font-size: 14px;
             transition: 0.2s;
         }
+
         .tab.active { background: var(--blue); color: #fff; }
 
-        /* BUTTONS */
         .btn { 
             display: block; 
             width: 100%; 
@@ -95,5 +87,68 @@
             color: #fff;
             text-align: center;
         }
+        
+        /* FIXED THE BROKEN CSS HERE */
         .btn-blue { background: var(--blue); }
-        .btn-green { background: var
+        .btn-green { background: var(--green); }
+
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
+
+        .tab-content { display: none; width: 100%; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('earn')">Earn</button>
+        <button class="tab" onclick="showTab('wallet')">Wallet</button>
+    </div>
+
+    <div id="earn" class="tab-content active">
+        <div class="glass-card">
+            <h2 style="color: var(--gold)">0.00 TON</h2>
+            <p style="color: var(--text-dim)">Ready to claim</p>
+        </div>
+        <button class="btn btn-blue" onclick="handleClaim()">Claim Rewards</button>
+    </div>
+
+    <div id="wallet" class="tab-content">
+        <div class="glass-card">
+            <p>Connect your TON wallet to withdraw.</p>
+        </div>
+        <button class="btn btn-green">Connect Wallet</button>
+    </div>
+</div>
+
+<script>
+    // Initialize Telegram Web App
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // Opens the app to full height
+
+    function showTab(tabId) {
+        // Remove active class from all tabs and contents
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        // Add active class to selected
+        event.currentTarget.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+        
+        // Haptic feedback for Telegram
+        if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    }
+
+    function handleClaim() {
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#0088cc', '#ffffff', '#ffaa00']
+        });
+    }
+</script>
+
+</body>
+</html>
