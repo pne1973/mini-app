@@ -1,73 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #0b0e11; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 15px; }
+        .card { background: #1c1f24; border-radius: 15px; padding: 15px; margin: 10px 0; border: 1px solid #2d333b; }
+        .bal-val { font-size: 32px; color: #0088cc; font-weight: bold; margin: 5px 0; }
+        button { background: #0088cc; color: white; border: none; padding: 12px; border-radius: 10px; width: 100%; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px; }
+        .ticker { background: rgba(124, 252, 0, 0.1); color: #7cfc00; font-size: 11px; padding: 5px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #7cfc0033; overflow: hidden; }
+        .ref-item { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; border-bottom: 1px solid #333; }
+        input { width: 100%; background: #000; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 8px; margin-top: 10px; box-sizing: border-box; }
+    </style>
+</head>
 <body>
-    <div style="display:flex; justify-content:space-between; padding: 10px;">
-        <span id="userTier" style="background:#f1c40f; color:black; padding:2px 10px; border-radius:10px; font-size:12px; font-weight:bold;">BRONZE</span>
-        <span id="streakDisplay" style="color:#0088cc; font-size:12px;">🔥 0 Day Streak</span>
+    <div class="ticker" id="ticker">🌐 Connecting to live network...</div>
+
+    <div style="display:flex; justify-content:space-between; font-size:11px; padding:0 5px;">
+        <span id="tier">🥉 BRONZE</span>
+        <span id="streak">🔥 0 DAY STREAK</span>
     </div>
 
     <div class="card">
-        <div style="color: #8a919e; font-size: 11px;">WALLET BALANCE</div>
+        <div style="color:#8a919e; font-size:11px;">AVAILABLE BALANCE</div>
         <div id="bal" class="bal-val">0.0000 TON</div>
-        <button id="spinBtn" onclick="triggerSpin()" style="background: linear-gradient(to right, #6a11cb, #2575fc);">🎰 LUCKY SPIN (Watch Ad)</button>
-        <button id="dailyBtn" onclick="claimDaily()" style="background: #27ae60; margin-top:5px;">📅 CLAIM DAILY BONUS</button>
+        <button onclick="playSpin()" id="spinBtn" style="background: linear-gradient(45deg, #0088cc, #00ffcc);">🎰 LUCKY SPIN (Watch Ad)</button>
+        <button onclick="claimDaily()" id="dailyBtn" style="background: #27ae60;">📅 DAILY CHECK-IN</button>
     </div>
 
-    <div class="card" style="padding: 10px;">
-        <div style="font-size:10px; color:#8a919e;">MILESTONES</div>
-        <div style="display:flex; justify-content:space-around; margin-top:10px;">
-            <div id="m1" style="opacity:0.3">🥉 3 Ref</div>
-            <div id="m2" style="opacity:0.3">🥈 10 Ref</div>
-            <div id="m3" style="opacity:0.3">🥇 50 Ref</div>
-        </div>
+    <div class="card">
+        <div style="color:#f1c40f; font-size:11px; font-weight:bold;">🏆 WEEKLY RECRUITERS</div>
+        <div id="leaderboard" style="margin: 10px 0;"></div>
+        <button onclick="shareInvite()" style="background: #f39c12;">📤 INVITE & CLIMB RANK</button>
+    </div>
+
+    <div class="card">
+        <div style="color:#8a919e; font-size:11px;">WITHDRAW (Min 0.05 TON)</div>
+        <input type="text" id="wallet" placeholder="TON Address (UQ...)">
+        <button onclick="withdraw()" id="wBtn">Request Payout</button>
+        <div style="font-size:9px; color:#57606a; margin-top:5px;">Network Fee: 0.005 TON applies</div>
     </div>
 
     <script>
-        // ... (Keep your existing tele and RENDER_URL constants)
+        const tele = window.Telegram.WebApp;
+        const RENDER_URL = "https://telegramadsbot-jzso.onrender.com";
+        const AD_URL = "https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
+        const user = tele.initDataUnsafe?.user;
 
-        async function loadApp() {
-            // Existing logic + these updates:
-            const res = await fetch(`${RENDER_URL}/check_eligibility?user_id=${user.id}`);
-            const data = await res.json();
-            
-            document.getElementById('streakDisplay').innerText = `🔥 ${data.streak_days || 0} Day Streak`;
-            
-            // Update Tiers
-            const refs = data.ref_count;
-            if (refs >= 50) { 
-                document.getElementById('userTier').innerText = "GOLD"; 
-                document.getElementById('m3').style.opacity = "1";
-            } else if (refs >= 10) {
-                document.getElementById('userTier').innerText = "SILVER";
-                document.getElementById('m2').style.opacity = "1";
-            } else if (refs >= 3) {
-                document.getElementById('m1').style.opacity = "1";
-            }
+        // Initialize Supabase for Realtime
+        const _supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_KEY');
+
+        async function init() {
+            if(!user) return;
+            loadData();
+            listenRealtime();
         }
 
-        async function triggerSpin() {
-            const btn = document.getElementById('spinBtn');
-            btn.innerText = "🎡 Spinning...";
+        async function loadData() {
+            const res = await fetch(`${RENDER_URL}/check_eligibility?user_id=${user.id}`);
+            const data = await res.json();
+            document.getElementById('bal').innerText = data.bal.toFixed(4) + " TON";
+            document.getElementById('streak').innerText = `🔥 ${data.streak_days} DAY STREAK`;
             
-            // 1. Force Ad View
-            tele.openLink("https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af");
+            const lbRes = await fetch(`${RENDER_URL}/referral_leaderboard`);
+            const lbData = await lbRes.json();
+            document.getElementById('leaderboard').innerHTML = lbData.map((u,i) => 
+                `<div class="ref-item"><span>${i+1}. ${u.name}</span><span>${u.count} refs</span></div>`
+            ).join('');
+        }
 
-            // 2. Delay reward to simulate "Spinning"
+        function listenRealtime() {
+            _supabase.channel('public:users').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users' }, payload => {
+                const diff = payload.new.bal - payload.old.bal;
+                if(diff > 0) {
+                    const msg = diff >= 0.002 ? "🔥 JACKPOT!" : "💎 Win:";
+                    document.getElementById('ticker').innerText = `${msg} User ...${payload.new.uid.slice(-4)} earned +${diff.toFixed(4)} TON`;
+                }
+            }).subscribe();
+        }
+
+        async function playSpin() {
+            tele.openLink(AD_URL);
             setTimeout(async () => {
-                const res = await fetch(`${RENDER_URL}/lucky_spin?user_id=${user.id}`);
+                const res = await fetch(`${RENDER_URL}/reward_spin?user_id=${user.id}`);
                 const data = await res.json();
-                document.getElementById('bal').innerText = data.new_bal.toFixed(4) + " TON";
-                tele.showAlert(`${data.msg}\nYou won ${data.win} TON!`);
-                btn.innerText = "🎰 LUCKY SPIN (Watch Ad)";
+                tele.showAlert(`You got a ${data.type}! +${data.win} TON`);
+                loadData();
             }, 4000);
         }
 
         async function claimDaily() {
             const res = await fetch(`${RENDER_URL}/daily_claim?user_id=${user.id}`);
-            if (res.status === 400) return tele.showAlert("Already claimed today!");
-            
             const data = await res.json();
-            document.getElementById('bal').innerText = data.new_bal.toFixed(4) + " TON";
-            tele.showAlert(`Daily Bonus Claimed! Streak: ${data.streak} Days`);
-            loadApp();
+            if(data.error) return tele.showAlert(data.error);
+            tele.showAlert(`Streak continued! +${data.reward} TON`);
+            loadData();
         }
+
+        function shareInvite() {
+            const url = `https://t.me/YourBotUsername?start=${user.id}`;
+            tele.shareExternalLink(url, "Earn real TON for free! Watch ads and win weekly prizes. 💎");
+        }
+
+        async function withdraw() {
+            const addr = document.getElementById('wallet').value;
+            if(addr.length < 10) return tele.showAlert("Invalid Address");
+            const res = await fetch(`${RENDER_URL}/withdraw`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: user.id, address: addr})
+            });
+            const d = await res.json();
+            tele.showAlert(d.status === "ok" ? "Request Sent!" : d.error);
+        }
+
+        tele.ready();
+        init();
     </script>
 </body>
+</html>
