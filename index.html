@@ -1,36 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyEarn TON</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #1a1a1a; color: white; text-align: center; font-family: sans-serif; padding-top: 50px; }
-        .btn { background: #0088cc; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 18px; }
+        body { 
+            background-color: #24292e; 
+            color: white; 
+            text-align: center; 
+            font-family: sans-serif; 
+            padding: 50px; 
+        }
+        .status { color: #7cfc00; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>💎 MyEarn TON</h1>
-    <p id="user-display">Loading User...</p>
-    <button class="btn" onclick="earn()">Watch Ad & Earn</button>
+    <h1>MyEarn TON</h1>
+    <p>Status: <span class="status">CONNECTED</span></p>
+    <p>If you see this, the Mini App is working!</p>
 
     <script>
-        // 2. Initialize Telegram
-        const tele = window.Telegram.WebApp;
-        tele.expand(); // Make it full screen
-        tele.ready();  // STOP the loading bar
-
-        const user = tele.initDataUnsafe?.user;
-        if (user) {
-            document.getElementById('user-display').innerText = "Hello, " + user.first_name;
-        } else {
-            document.getElementById('user-display').innerText = "Error: Open inside Telegram";
-        }
-
-        function earn() {
-            alert("Clicked! Now we connect to Render...");
-        }
+        // Tell Telegram the app is ready to be shown
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
     </script>
 </body>
 </html>
