@@ -4,45 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <script type='text/javascript' src='//peltas.com/83/88/12/8388126e793e79a8301d06e781442.js'></script>
     <style>
-        body { font-family: sans-serif; background: #0d1117; color: white; text-align: center; padding: 15px; }
-        .card { background: #161b22; border-radius: 15px; padding: 15px; border: 1px solid #30363d; margin-bottom: 15px; }
-        .xp-bar { width: 100%; height: 6px; background: #333; border-radius: 3px; margin: 10px 0; overflow: hidden; }
-        .xp-fill { height: 100%; background: #0088cc; width: 0%; transition: 0.5s; }
-        .btn { width: 100%; padding: 14px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; margin: 5px 0; }
+        body { font-family: sans-serif; background: #0d1117; color: white; text-align: center; padding: 15px; margin: 0; }
+        .card { background: #161b22; border-radius: 16px; padding: 20px; border: 1px solid #30363d; margin-bottom: 15px; }
+        .xp-bar { width: 100%; height: 8px; background: #333; border-radius: 4px; margin: 12px 0; overflow: hidden; }
+        .xp-fill { height: 100%; background: linear-gradient(90deg, #0088cc, #00ffcc); width: 0%; transition: 0.5s; }
+        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin: 6px 0; font-size: 16px; }
         .btn-spin { background: #238636; color: white; }
         .btn-gold { background: #f1c40f; color: black; }
-        .shoutbox { font-size: 11px; background: #000; padding: 5px; border-radius: 5px; height: 50px; overflow: hidden; color: #00ffcc; margin-top: 10px; }
+        #adminPanel { display: none; background: #800000; padding: 12px; border-radius: 12px; font-size: 12px; margin-bottom: 15px; border: 1px solid #ff4444; }
+        .shout-container { background: #000; border-radius: 10px; padding: 10px; margin-bottom: 15px; text-align: left;}
+        #shoutbox { font-size: 12px; color: #00ffcc; height: 75px; overflow-y: auto; margin-bottom: 8px; }
+        .shout-input-row { display: flex; gap: 5px; }
+        #shoutInput { flex: 1; padding: 8px; border-radius: 6px; border: none; background: #222; color: white; font-size: 12px; }
+        #shoutBtn { background: #0088cc; color: white; border: none; border-radius: 6px; padding: 8px 12px; font-size: 12px; cursor: pointer;}
     </style>
 </head>
 <body>
-    <div id="ton-connect" style="display:flex; justify-content:flex-end;"></div>
-    
+    <div id="adminPanel">👑 <b>ADMIN CONSOLE</b><br>Users: <span id="a_u">0</span> | Debt: <span id="a_d">0</span> TON</div>
+
     <div class="card">
-        <div style="display:flex; justify-content:space-between; font-size:12px;">
-            <span id="rank" style="color:#8b949e">NOVICE</span>
-            <span id="nrg">⚡ 0/10</span>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span id="rank" style="font-size:10px; background:#30363d; padding:4px 8px; border-radius:10px;">NOVICE</span>
+            <span id="nrg" style="font-size:14px; font-weight:bold;">⚡ 0/10</span>
         </div>
-        <h1 id="bal">0.0000 TON</h1>
+        <h1 id="bal" style="font-size: 42px; margin: 10px 0;">0.0000 TON</h1>
         <div class="xp-bar"><div id="xpFill" class="xp-fill"></div></div>
-        <div style="display:flex; justify-content:space-between; font-size:10px; color:#8b949e">
-            <span>LVL <span id="lvl">1</span></span>
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:#8b949e">
+            <span>LEVEL <span id="lvl">1</span></span>
             <span>TICKETS: <span id="tix">0</span> 🎫</span>
         </div>
-        <div class="shoutbox" id="shout">Loading Live Shoutbox...</div>
     </div>
 
-    <button class="btn btn-spin" id="spinBtn" onclick="startAdSpin()">🎰 WATCH AD & SPIN (15s)</button>
-    <button class="btn btn-gold" onclick="ticketSpin()">🎫 USE GOLDEN TICKET (5x WIN)</button>
-    <button class="btn" style="background:#24292f" onclick="share()">🚀 SHARE FOR +5 ENERGY</button>
-    <button class="btn" style="background:#0088cc" onclick="openLeaderboard()">🏆 LEADERBOARD</button>
+    <div class="shout-container">
+        <div id="shoutbox">Loading Global Chat...</div>
+        <div class="shout-input-row">
+            <input type="text" id="shoutInput" placeholder="Chat here..." maxlength="50">
+            <button id="shoutBtn" onclick="sendShout()">SEND</button>
+        </div>
+    </div>
+
+    <button class="btn btn-spin" id="spinBtn" onclick="runAdTimer()">🎰 WATCH AD & SPIN (15s)</button>
+    <button class="btn btn-gold" onclick="ticketSpin()">🎫 GOLDEN SPIN (5x NO ADS)</button>
+    <button class="btn" style="background:#24292f" onclick="share()">🚀 INVITE FRIENDS (10% PASSIVE)</button>
 
     <script>
         const tele = window.Telegram.WebApp;
         const user = tele.initDataUnsafe.user;
-        const R_URL = "https://your-app.onrender.com";
-        const AD_LINK = "https://peltas.com/130103/1781442";
+        const R_URL = "https://telegramadsbot-jzso.onrender.com"; 
+        const MY_ID = "5401881400";
 
         async function load() {
             const res = await (await fetch(`${R_URL}/check_eligibility?user_id=${user.id}&ref=${tele.initDataUnsafe.start_param || ""}`)).json();
@@ -52,19 +63,34 @@
             document.getElementById('lvl').innerText = res.level;
             document.getElementById('xpFill').style.width = (res.xp % 100) + "%";
             
-            // Load Shoutbox
-            const s = await (await fetch(`${R_URL}/shoutbox`)).json();
-            document.getElementById('shout').innerHTML = s.map(m => `<div>User${m.uid.slice(-3)}: ${m.msg}</div>`).join("");
+            if(user.id == MY_ID) {
+                const s = await (await fetch(`${R_URL}/admin_stats?user_id=${user.id}`)).json();
+                document.getElementById('adminPanel').style.display = 'block';
+                document.getElementById('a_u').innerText = s.users;
+                document.getElementById('a_d').innerText = s.debt;
+            }
+            loadShoutbox();
         }
 
-        function startAdSpin() {
-            window.open(AD_LINK, "_blank");
+        async function loadShoutbox() {
+            const shouts = await (await fetch(`${R_URL}/shoutbox`)).json();
+            document.getElementById('shoutbox').innerHTML = shouts.map(m => `<div><b>User${m.uid.slice(-3)}:</b> ${m.msg}</div>`).join("");
+        }
+
+        async function sendShout() {
+            const input = document.getElementById('shoutInput');
+            if(!input.value.trim()) return;
+            await fetch(`${R_URL}/shoutbox`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({user_id: user.id, msg: input.value})});
+            input.value = ""; loadShoutbox();
+        }
+
+        function runAdTimer() {
             let sec = 15;
             const btn = document.getElementById('spinBtn');
             btn.disabled = true;
             const timer = setInterval(async () => {
-                btn.innerText = `WAIT ${sec}s...`;
-                if(sec-- < 0) {
+                btn.innerText = `LOCKED: ${sec}s`;
+                if(sec-- <= 0) {
                     clearInterval(timer);
                     await fetch(`${R_URL}/reward_spin`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:user.id})});
                     btn.disabled = false; btn.innerText = "🎰 WATCH AD & SPIN (15s)";
@@ -74,15 +100,12 @@
         }
 
         async function ticketSpin() {
-            const res = await fetch(`${R_URL}/reward_spin`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:user.id, use_ticket:true})});
-            const d = await res.json();
-            if(d.error) tele.showAlert("No Golden Tickets!");
-            else load();
+            await fetch(`${R_URL}/reward_spin`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:user.id, use_ticket:true})});
+            load();
         }
 
         function share() {
-            tele.switchInlineQuery(`Win TON! Join me: https://t.me/YourBot?start=${user.id}`);
-            // Logic to grant +5 energy can be added to backend /share endpoint
+            tele.switchInlineQuery(`Win real TON! Join Myearnbot2026_bot 🎰\nhttps://t.me/Myearnbot2026_bot?start=${user.id}`);
         }
 
         load(); tele.expand(); tele.ready();
