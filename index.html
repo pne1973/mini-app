@@ -6,53 +6,56 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        :root { --gold: #f1c40f; --blue: #0088cc; }
-        body { background: #050a10; color: white; font-family: 'Inter', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; justify-content: space-between; }
-        .p-20 { padding: 20px; }
-        .glass { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 25px; padding: 20px; text-align: center; }
-        .ton-val { font-size: 3rem; font-weight: 900; margin: 10px 0; }
-        .leaderboard { background: rgba(0,0,0,0.2); border-radius: 20px; padding: 15px; width: 90%; margin: 0 auto; border: 1px solid rgba(255,255,255,0.05); }
-        .rank-item { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        :root { --gold: #f1c40f; --blue: #0088cc; --bg: #050a10; }
+        body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .scrollable { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .glass { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 25px; padding: 20px; width: 100%; box-sizing: border-box; }
+        .ton-val { font-size: 3.2rem; font-weight: 900; background: linear-gradient(to bottom, #fff, #f1c40f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 10px 0; }
         .footer { background: #0a0f16; padding: 25px; border-top: 1px solid #1a222c; border-radius: 35px 35px 0 0; }
         .energy-fill { height: 8px; background: var(--gold); border-radius: 5px; transition: width 0.5s; box-shadow: 0 0 10px var(--gold); }
-        .btn-spin { background: var(--blue); border: none; padding: 18px; border-radius: 18px; width: 100%; font-weight: 800; color: white; box-shadow: 0 8px 15px rgba(0, 136, 204, 0.3); }
+        .btn-spin { background: var(--blue); border: none; padding: 20px; border-radius: 20px; width: 100%; font-weight: 800; color: white; font-size: 1.1rem; }
         .btn-spin:disabled { background: #1b2733; color: #444; }
-        #adm { color: var(--gold); border: 1px solid var(--gold); padding: 4px 10px; border-radius: 8px; font-size: 10px; display: none; margin-bottom: 10px; }
+        .rank-item { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 6px; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        #admBadge { color: var(--gold); border: 1px solid var(--gold); padding: 5px 12px; border-radius: 10px; font-size: 10px; display: none; margin-bottom: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="p-20 text-center">
-    <div id="adm" onclick="showAdmin()">👑 MASTER ADMIN</div>
-    
-    <div class="glass mb-4">
-        <small class="text-secondary">MEU SALDO</small>
+<div class="scrollable">
+    <div id="admBadge" onclick="showAdmin()">👑 MASTER ADMIN</div>
+
+    <div class="glass text-center">
+        <small class="text-secondary">TOTAL BALANCE</small>
         <div class="ton-val" id="bal">0.0000</div>
-        <span class="badge bg-primary">TON COIN</span>
+        <div class="progress" style="height: 5px; background: #111; margin-top: 10px;">
+            <div id="withdrawProgress" class="progress-bar bg-success" style="width: 0%"></div>
+        </div>
+        <small class="text-secondary" style="font-size: 10px;">Min. Withdraw: 0.50 TON</small>
     </div>
 
-    <div class="leaderboard">
-        <h6 class="text-secondary small mb-2"><i class="bi bi-trophy"></i> RANKING GLOBAL</h6>
-        <div id="leaderList"></div>
+    <div class="glass">
+        <h6 class="small text-secondary text-center mb-3"><i class="bi bi-trophy"></i> GLOBAL RANKING</h6>
+        <div id="leaderboard"></div>
     </div>
 </div>
 
 <div class="footer">
     <div class="d-flex justify-content-between small mb-1">
-        <span>⚡ ENERGIA</span>
-        <span id="nrgVal">--/10</span>
+        <span>⚡ ENERGY</span>
+        <span id="nrgText">--/10</span>
     </div>
     <div style="height: 8px; background: #111; border-radius: 5px; margin-bottom: 15px;">
-        <div id="nrgFill" class="energy-fill"></div>
+        <div id="nrgBar" class="energy-fill"></div>
     </div>
 
     <button id="spinBtn" class="btn-spin mb-3" onclick="handleSpin()">
-        <i class="bi bi-play-fill"></i> SPIN & GANHAR
+        <i class="bi bi-play-circle-fill"></i> SPIN & EARN (15s AD)
     </button>
     
     <div class="d-flex gap-2">
-        <button class="btn btn-dark w-50 py-2" onclick="showHelp()"><i class="bi bi-info-circle"></i> AJUDA</button>
-        <button class="btn btn-dark w-50 py-2" onclick="shareInvite()"><i class="bi bi-people"></i> CONVIDAR</button>
+        <button class="btn btn-dark w-50 py-2" onclick="showHelp()"><i class="bi bi-info-circle"></i> HELP</button>
+        <button class="btn btn-dark w-50 py-2" onclick="shareInvite()"><i class="bi bi-people"></i> INVITE</button>
+        <button class="btn btn-dark w-50 py-2" onclick="withdraw()"><i class="bi bi-wallet2"></i> CASH</button>
     </div>
 </div>
 
@@ -62,22 +65,29 @@
     const R_URL = "https://telegramadsbot-jzso.onrender.com";
     const AD_LINK = "https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
 
-    async function init() {
-        if(String(user.id) === "5401881400") document.getElementById('adm').style.display = 'inline-block';
+    async function load() {
+        if(String(user.id) === "5401881400") document.getElementById('admBadge').style.display = 'inline-block';
         const r = await fetch(`${R_URL}/check_eligibility?user_id=${user.id}`);
         updateUI(await r.json());
+        
         const lr = await fetch(`${R_URL}/get_leaderboard`);
         const leaders = await lr.json();
         let html = "";
-        leaders.forEach((u, i) => { html += `<div class="rank-item"><span>#${i+1} ID:${u.uid.slice(0,5)}</span><b>${u.balance.toFixed(4)}</b></div>`; });
-        document.getElementById('leaderList').innerHTML = html;
+        leaders.forEach((u, i) => {
+            html += `<div class="rank-item"><span>#${i+1} ID:${u.uid.slice(0,5)}</span><b>${u.balance.toFixed(4)}</b></div>`;
+        });
+        document.getElementById('leaderboard').innerHTML = html;
         tele.expand();
     }
 
     function updateUI(d) {
         document.getElementById('bal').innerText = d.balance.toFixed(4);
-        document.getElementById('nrgVal').innerText = d.energy + "/10";
-        document.getElementById('nrgFill').style.width = (d.energy * 10) + "%";
+        document.getElementById('nrgText').innerText = d.energy + "/10";
+        document.getElementById('nrgBar').style.width = (d.energy * 10) + "%";
+        
+        // Update Withdraw Progress
+        let prog = (d.balance / 0.5) * 100;
+        document.getElementById('withdrawProgress').style.width = Math.min(prog, 100) + "%";
     }
 
     function handleSpin() {
@@ -86,13 +96,17 @@
         btn.disabled = true;
         let t = 15;
         let timer = setInterval(async () => {
-            btn.innerHTML = `<i class="bi bi-hourglass-split"></i> AGUARDE ${t}s`;
+            btn.innerHTML = `<i class="bi bi-hourglass-split"></i> WAITING ${t}s...`;
             if(t-- <= 0) {
                 clearInterval(timer);
-                const res = await fetch(`${R_URL}/reward_spin`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({user_id: user.id}) });
+                const res = await fetch(`${R_URL}/reward_spin`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: user.id})
+                });
                 updateUI(await res.json());
                 btn.disabled = false;
-                btn.innerHTML = `<i class="bi bi-play-fill"></i> SPIN & GANHAR`;
+                btn.innerHTML = `<i class="bi bi-play-circle-fill"></i> SPIN & EARN (15s AD)`;
                 tele.HapticFeedback.notificationOccurred('success');
             }
         }, 1000);
@@ -100,19 +114,34 @@
 
     function showHelp() {
         tele.showPopup({
-            title: "Como Jogar?",
-            message: "1. Clique em SPIN e veja o anúncio.\n2. Aguarde 15s para validar a mineração.\n3. Ganhe 0.0002 TON por clique.\n4. A energia recupera 1 ponto a cada 30 min.\n5. Convide amigos para subir no Ranking!",
+            title: "How to Play?",
+            message: "1. Click SPIN to open the AD.\n2. Wait 15s to claim reward.\n3. Earn 0.0002 TON per click.\n4. Energy refills 1pt/30min.\n5. Minimum withdrawal: 0.5 TON.",
             buttons: [{type: "close"}]
         });
     }
 
-    function shareInvite() { window.open(`https://t.me/share/url?url=https://t.me/CryptoEarnerBot?start=ref_${user.id}&text=Vem ganhar TON comigo!`); }
+    async function withdraw() {
+        const r = await fetch(`${R_URL}/request_withdraw`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({user_id: user.id})
+        });
+        const d = await r.json();
+        if(d.error) tele.showAlert(d.error);
+        else tele.showAlert(d.success);
+    }
+
+    function shareInvite() {
+        window.open(`https://t.me/share/url?url=https://t.me/CryptoEarnerBot?start=ref_${user.id}&text=Join TON EMPIRE and earn free TON!`);
+    }
+
     async function showAdmin() {
         const r = await fetch(`${R_URL}/admin_stats?user_id=${user.id}`);
         const d = await r.json();
-        tele.showPopup({ title: "Admin", message: `Users: ${d.total_users}\nDebt: ${d.debt.toFixed(4)} TON` });
+        tele.showPopup({ title: "Admin Panel", message: `Users: ${d.total_users}\nDebt: ${d.debt.toFixed(4)} TON` });
     }
-    init();
+
+    load();
 </script>
 </body>
 </html>
