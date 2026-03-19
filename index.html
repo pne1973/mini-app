@@ -3,132 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TON EMPIRE 2026</title>
+    <title>TON EMPIRE</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        body { background: #0d1117; color: white; font-family: 'Segoe UI', sans-serif; }
-        .card { background: #161b22; border: 1px solid #30363d; border-radius: 20px; padding: 20px; margin-top: 15px; }
-        .xp-bar { width: 100%; height: 8px; background: #30363d; border-radius: 10px; margin: 10px 0; }
-        .xp-fill { height: 100%; background: #238636; border-radius: 10px; width: 0%; transition: 1s; }
-        .btn-main { background: linear-gradient(45deg, #0088cc, #00d4ff); border: none; font-weight: 900; padding: 18px; width: 100%; border-radius: 15px; color: white; box-shadow: 0 4px 15px rgba(0,136,204,0.3); }
-        .btn-main:disabled { opacity: 0.6; background: #30363d; }
-        .btn-daily { background: #f1c40f; color: black; font-weight: bold; border: none; border-radius: 10px; width: 100%; padding: 10px; margin-bottom: 10px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% {transform:scale(1)} 50% {transform:scale(1.03)} 100% {transform:scale(1)} }
-        #adminPanel { border: 2px solid #f1c40f; display: none; }
+        body { background: #0b0e14; color: white; font-family: sans-serif; }
+        .card { background: #161b22; border-radius: 15px; padding: 15px; border: 1px solid #30363d; margin-bottom: 15px; }
+        /* DESTAQUE ADMIN */
+        #adminPanel { border: 2px solid #ff4d4d; background: #2d0a0a; display: none; margin-bottom: 20px; box-shadow: 0 0 15px rgba(255, 77, 77, 0.4); }
+        .xp-bar { width: 100%; height: 8px; background: #30363d; border-radius: 5px; margin: 10px 0; }
+        .xp-fill { height: 100%; background: #238636; width: 0%; transition: 0.5s; }
+        .btn-spin { background: linear-gradient(45deg, #0088cc, #00d4ff); border: none; font-weight: bold; padding: 15px; width: 100%; border-radius: 12px; color: white; }
+        #bal { color: #f1c40f; font-size: 2.2rem; font-weight: 800; }
+        .stats-text { color: #8b949e; font-size: 0.8rem; }
     </style>
 </head>
 <body>
-
-    <div class="container py-4">
-        <div id="adminPanel" class="card">
-            <h5 class="text-warning">👑 ADMIN CONSOLE</h5>
-            <p id="admStats" class="small m-0">Loading system data...</p>
+    <div class="container py-3">
+        <div id="adminPanel" class="card text-center">
+            <h6 style="color: #ff4d4d; font-weight: 900;">🚨 SYSTEM ADMIN CONSOLE</h6>
+            <div id="admStats" class="small">Connecting to database...</div>
         </div>
 
-        <div class="text-center">
-            <h2 class="fw-bold">💎 TON EMPIRE</h2>
-            <p class="text-muted small">Global Ad-Earning Platform</p>
+        <div class="text-center mb-3">
+            <h3 class="fw-bold">💎 TON EMPIRE</h3>
         </div>
 
-        <div class="card shadow">
-            <div class="d-flex justify-content-between small text-muted">
-                <span>LEVEL <b id="lvl" class="text-white">1</b></span>
-                <span>ENERGY: <b id="nrg" class="text-white">10/10</b></span>
+        <div class="card text-center shadow">
+            <div class="d-flex justify-content-between stats-text">
+                <span>LVL <b id="lvl" class="text-white">1</b></span>
+                <span>ENERGY <b id="nrg" class="text-white">10/10</b></span>
             </div>
             <div class="xp-bar"><div id="xpFill" class="xp-fill"></div></div>
-            <h1 class="my-3"><span id="bal">0.0000</span> <small class="fs-6">TON</small></h1>
+            <div id="bal">0.0000</div>
+            <span class="stats-text">TON BALANCE</span>
         </div>
 
-        <div class="mt-4">
-            <button class="btn-daily" onclick="claimDaily()">🎁 DAILY BONUS (+50 XP)</button>
-            <button id="spinBtn" class="btn-main" onclick="startSpin()">🎰 SPIN & EARN (15s AD)</button>
+        <button class="btn btn-warning w-100 fw-bold mb-3" onclick="daily()">🎁 CLAIM DAILY BONUS</button>
+        <button id="spinBtn" class="btn-spin mb-3" onclick="startSpin()">🎰 SPIN & WATCH AD (15s)</button>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-dark w-50" onclick="share()">🔗 INVITE</button>
+            <button class="btn btn-dark w-50" onclick="withdraw()">💸 WITHDRAW</button>
         </div>
 
-        <div class="mt-3 d-flex gap-2">
-            <button class="btn btn-outline-light w-50 py-3" onclick="share()">🔗 INVITE</button>
-            <button class="btn btn-outline-light w-50 py-3" onclick="withdraw()">💸 WITHDRAW</button>
-        </div>
-
-        <div class="mt-4 text-center small text-muted">
-            Tickets: <b id="tix" class="text-white">0</b> | 
-            Referrals: <b id="refs" class="text-white">0/3</b>
+        <div class="text-center mt-3 stats-text">
+            Tickets: <b id="tix" class="text-white">0</b> | Refs: <b id="refs" class="text-white">0/3</b>
         </div>
     </div>
 
     <script>
         const tele = window.Telegram.WebApp;
         tele.expand();
-        const user = tele.initDataUnsafe.user || {id: "5401881400", first_name: "Tester"}; // Fallback para teste
-        const R_URL = "TEU_URL_DO_RENDER"; 
+        const user = tele.initDataUnsafe.user || {id: "5401881400"};
+        const R_URL = "https://ton-empire-bot.onrender.com"; // URL ATUALIZADO
         const AD_URL = "https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
 
         async function load() {
-            try {
-                const res = await (await fetch(`${R_URL}/check_eligibility?user_id=${user.id}`)).json();
-                document.getElementById('bal').innerText = res.balance.toFixed(4);
-                document.getElementById('lvl').innerText = res.level;
-                document.getElementById('nrg').innerText = res.energy + "/10";
-                document.getElementById('tix').innerText = res.tickets;
-                document.getElementById('refs').innerText = res.ref_count + "/3";
-                document.getElementById('xpFill').style.width = (res.xp % 100) + "%";
+            const res = await (await fetch(`${R_URL}/check_eligibility?user_id=${user.id}`)).json();
+            document.getElementById('bal').innerText = res.balance.toFixed(4);
+            document.getElementById('lvl').innerText = res.level;
+            document.getElementById('nrg').innerText = res.energy + "/10";
+            document.getElementById('tix').innerText = res.tickets;
+            document.getElementById('refs').innerText = res.ref_count + "/3";
+            document.getElementById('xpFill').style.width = (res.xp % 100) + "%";
 
-                if(user.id == "5401881400") {
-                    document.getElementById('adminPanel').style.display = 'block';
-                    const adm = await (await fetch(`${R_URL}/admin_stats?user_id=${user.id}`)).json();
-                    document.getElementById('admStats').innerText = `Total Users: ${adm.total_users} | Platform Debt: ${adm.debt} TON`;
-                }
-            } catch(e) { console.error("Sync Error"); }
+            // LÓGICA DE EXIBIÇÃO DO ADMIN
+            if(String(user.id) === "5401881400") {
+                document.getElementById('adminPanel').style.display = 'block';
+                const adm = await (await fetch(`${R_URL}/admin_stats?user_id=${user.id}`)).json();
+                document.getElementById('admStats').innerHTML = `Users: <b>${adm.total_users}</b> | Debt: <b>${adm.debt.toFixed(4)} TON</b>`;
+            }
         }
 
-        async function startSpin() {
+        function startSpin() {
             window.open(AD_URL, '_blank');
             const btn = document.getElementById('spinBtn');
             btn.disabled = true;
-            let timer = 15;
-            
-            const interval = setInterval(() => {
-                btn.innerText = `WAITING AD... ${timer}s`;
-                if(timer-- <= 0) {
-                    clearInterval(interval);
-                    finishSpin();
+            let sec = 15;
+            const t = setInterval(async () => {
+                btn.innerText = `WAITING... ${sec}s`;
+                if(sec-- <= 0) {
+                    clearInterval(t);
+                    const r = await fetch(`${R_URL}/reward_spin`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({user_id: user.id})
+                    });
+                    btn.disabled = false;
+                    btn.innerText = "🎰 SPIN & WATCH AD (15s)";
+                    load();
                 }
             }, 1000);
         }
 
-        async function finishSpin() {
-            const res = await fetch(`${R_URL}/reward_spin`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: user.id})
-            });
-            const data = await res.json();
-            if(data.win) tele.showConfirm(`🎉 Awesome! You earned ${data.win.toFixed(5)} TON`);
-            document.getElementById('spinBtn').innerText = "🎰 SPIN & EARN (15s AD)";
-            document.getElementById('spinBtn').disabled = false;
-            load();
+        async function daily() {
+            const r = await fetch(`${R_URL}/daily_checkin`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({user_id: user.id})});
+            const d = await r.json(); tele.showAlert(d.msg); load();
         }
 
-        async function claimDaily() {
-            const res = await fetch(`${R_URL}/daily_checkin`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: user.id})
-            });
-            const data = await res.json();
-            tele.showAlert(data.msg);
-            load();
-        }
-
-        function share() {
-            const text = encodeURIComponent("🎰 I'm earning real TON for free! Join the Empire: ");
-            const url = `https://t.me/Myearnbot2026_bot?start=${user.id}`;
-            tele.switchInlineQuery(`${text}\n${url}`);
-        }
-
-        function withdraw() {
-            tele.showAlert("Withdrawals unlock at 0.1 TON + 3 active referrals!");
-        }
+        function share() { tele.switchInlineQuery(`Join TON Empire!\nhttps://t.me/Myearnbot2026_bot?start=${user.id}`); }
+        function withdraw() { tele.showAlert("Minimum: 0.1 TON + 3 Referrals."); }
 
         load();
     </script>
