@@ -1,118 +1,62 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TON EMPIRE</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root { --bg: #0d1117; --card: #161b22; --text: #f0f6fc; --accent: #58a6ff; --gold: #f1c40f; }
-        body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; overflow-x: hidden; }
-        .card { background: var(--card); border: 1px solid #30363d; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .stat-row { display: flex; justify-content: space-between; font-size: 14px; color: #8b949e; margin-bottom: 8px; }
-        .stat-val { color: var(--text); font-weight: bold; }
-        .xp-bar { width: 100%; height: 6px; background: #30363d; border-radius: 10px; margin: 10px 0 20px; }
-        .xp-fill { height: 100%; background: #238636; border-radius: 10px; width: 0%; transition: 1s; }
-        .balance-main { font-size: 38px; font-weight: 800; color: var(--gold); margin: 10px 0; }
-        .btn-main { background: linear-gradient(45deg, #0088cc, #00d4ff); border: none; color: white; width: 100%; padding: 18px; border-radius: 14px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-main:disabled { filter: grayscale(1); opacity: 0.5; }
-        .btn-daily { background: var(--gold); color: black; margin-bottom: 12px; padding: 12px; }
-        .grid-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .btn-sec { background: transparent; border: 1px solid #30363d; color: var(--text); padding: 12px; border-radius: 10px; font-weight: bold; }
-        #adminPanel { border: 2px solid var(--gold); display: none; margin-bottom: 15px; }
-    </style>
-</head>
-<body>
+<script>
+    const tele = window.Telegram.WebApp;
+    tele.expand(); // Abre a app em ecrã total
+    
+    // Identificação do Utilizador
+    const user = tele.initDataUnsafe.user || {id: "5401881400"}; // Fallback para o teu ID em testes
+    const ADMIN_ID = "5401881400";
+    
+    // O TEU URL REAL DO RENDER (Confirmado)
+    const R_URL = "https://telegramadsbot-jzso.onrender.com"; 
+    
+    // O TEU SMARTLINK ADSTERRA
+    const AD_URL = "https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
 
-    <div id="adminPanel" class="card">
-        <h4 style="margin:0; color:var(--gold)">👑 ADMIN PANEL</h4>
-        <p id="admStats" style="font-size:12px">Loading...</p>
-    </div>
+    async function load() {
+        console.log("Iniciando carga para o ID:", user.id);
 
-    <div class="card">
-        <div class="stat-row">
-            <span>LEVEL <span id="lvl" class="stat-val">1</span></span>
-            <span>ENERGY <span id="nrg" class="stat-val">10/10</span></span>
-        </div>
-        <div class="xp-bar"><div id="xpFill" class="xp-fill"></div></div>
-        <div class="balance-main"><span id="bal">0.0000</span> <small style="font-size:14px">TON</small></div>
-    </div>
+        // 👑 ATIVAÇÃO DO PAINEL DE ADMIN
+        if (String(user.id) === ADMIN_ID) {
+            document.getElementById('adminPanel').style.display = 'block';
+        }
 
-    <button class="btn-main btn-daily" onclick="claimDaily()">🎁 DAILY BONUS (+50 XP)</button>
-    <button id="spinBtn" class="btn-main" onclick="startSpin()">🎰 SPIN & EARN (15s AD)</button>
+        try {
+            // Procura os dados no servidor do Render
+            const res = await fetch(`${R_URL}/check_eligibility?user_id=${user.id}`);
+            const data = await res.json();
+            
+            // Atualiza a Interface com os dados Reais do Supabase
+            document.getElementById('bal').innerText = data.balance.toFixed(4);
+            document.getElementById('lvl').innerText = data.level;
+            document.getElementById('nrg').innerText = data.energy + "/10";
+            document.getElementById('tix').innerText = data.tickets || 0;
+            document.getElementById('refs').innerText = (data.ref_count || 0) + "/3";
+            
+            // Barra de XP (cada 100 XP sobe um nível)
+            document.getElementById('xpFill').style.width = (data.xp % 100) + "%";
 
-    <div class="grid-btns">
-        <button class="btn-sec" onclick="share()">🔗 INVITE</button>
-        <button class="btn-sec" onclick="withdraw()">💸 WITHDRAW</button>
-    </div>
-
-    <div style="text-align:center; margin-top:20px; font-size:12px; color:#8b949e">
-        Tickets: <b id="tix" style="color:white">0</b> | Referrals: <b id="refs" style="color:white">0/3</b>
-    </div>
-
-    <script>
-        const tele = window.Telegram.WebApp;
-        tele.expand();
-        const user = tele.initDataUnsafe.user || {id: "5401881400"};
-        const R_URL = "https://TEU-LINK-DO-RENDER.onrender.com"; 
-        const AD_URL = "https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const ref_id = urlParams.get('ref');
-
-        async function load() {
-            const res = await (await fetch(`${R_URL}/check_eligibility?user_id=${user.id}&ref=${ref_id || ""}`)).json();
-            document.getElementById('bal').innerText = res.balance.toFixed(4);
-            document.getElementById('lvl').innerText = res.level;
-            document.getElementById('nrg').innerText = res.energy + "/10";
-            document.getElementById('tix').innerText = res.tickets;
-            document.getElementById('refs').innerText = res.ref_count + "/3";
-            document.getElementById('xpFill').style.width = (res.xp % 100) + "%";
-
-            if(user.id == "5401881400") {
-                document.getElementById('adminPanel').style.display = 'block';
-                const adm = await (await fetch(`${R_URL}/admin_stats?user_id=${user.id}`)).json();
-                document.getElementById('admStats').innerText = `Users: ${adm.total_users} | Platform Debt: ${adm.debt.toFixed(2)} TON`;
+            // Se for Admin, carrega os lucros globais
+            if (String(user.id) === ADMIN_ID) {
+                const admRes = await fetch(`${R_URL}/admin_stats?user_id=${user.id}`);
+                const admData = await admRes.json();
+                document.getElementById('admStats').innerHTML = 
+                    `Total Users: <b>${admData.total_users}</b> | Platform Debt: <b>${admData.debt} TON</b>`;
+            }
+        } catch (error) {
+            console.error("Erro ao ligar ao Render:", error);
+            if (String(user.id) === ADMIN_ID) {
+                document.getElementById('admStats').innerText = "⚠️ Erro: Servidor Render Offline ou Erro de CORS";
             }
         }
+    }
 
-        async function startSpin() {
-            window.open(AD_URL, '_blank');
-            const btn = document.getElementById('spinBtn');
-            btn.disabled = true;
-            let timer = 15;
-            const clock = setInterval(() => {
-                btn.innerText = `WAITING AD... ${timer}s`;
-                if(timer-- <= 0) {
-                    clearInterval(clock);
-                    finishSpin();
-                }
-            }, 1000);
-        }
-
-        async function finishSpin() {
-            const res = await fetch(`${R_URL}/reward_spin`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: user.id})
-            });
-            const data = await res.json();
-            if(data.win) tele.showConfirm(`🎉 Won ${data.win.toFixed(5)} TON!`);
-            document.getElementById('spinBtn').innerText = "🎰 SPIN & EARN (15s AD)";
-            document.getElementById('spinBtn').disabled = false;
-            load();
-        }
-
-        function share() {
-            const url = `https://t.me/Myearnbot2026_bot?start=${user.id}`;
-            tele.switchInlineQuery(`🎰 Earn real TON! Level up and win: \n${url}`);
-        }
-
-        function withdraw() {
-            tele.showAlert("Withdraw unlocks at 0.1 TON and 3 active referrals!");
-        }
-
-        load();
-    </script>
-</body>
-</html>
+    async function startSpin() {
+        // 1. Abre o anúncio Adsterra numa nova aba
+        window.open(AD_URL, '_blank');
+        
+        const btn = document.getElementById('spinBtn');
+        btn.disabled = true;
+        let timer = 15;
+        
+        // 2. Contador de 15 segundos (Obrigatório para o utilizador ver o anúncio)
+        const interval = setInterval(() =>
