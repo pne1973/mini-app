@@ -1,165 +1,136 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TON EMPIRE 2026</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script type='text/javascript' src='//peltas.com/83/88/12/8388126e793e79a8301d06e781442.js'></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        body { font-family: -apple-system, sans-serif; background: #0d1117; color: white; text-align: center; padding: 15px; margin: 0; overflow-x: hidden; }
-        .card { background: #161b22; border-radius: 16px; padding: 20px; border: 1px solid #30363d; margin-bottom: 15px; }
-        .xp-bar { width: 100%; height: 8px; background: #333; border-radius: 4px; margin: 12px 0; overflow: hidden; }
-        .xp-fill { height: 100%; background: linear-gradient(90deg, #0088cc, #00ffcc); width: 0%; transition: 0.5s; }
-        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin: 5px 0; font-size: 15px; transition: 0.2s; }
-        .btn:active { transform: scale(0.98); }
-        .btn-spin { background: #238636; color: white; }
-        .btn-info { background: #30363d; color: #8b949e; font-size: 11px; padding: 8px; border: 1px solid #444; }
-        #adminPanel { display: none; background: #800000; padding: 10px; border-radius: 10px; font-size: 11px; margin-bottom: 10px; border: 1px solid #ff4444; }
-        .shout-container { background: #000; border-radius: 10px; padding: 10px; margin-bottom: 15px; text-align: left; font-size: 12px; }
-        #shoutbox { height: 60px; overflow-y: auto; color: #00ffcc; margin-bottom: 5px; }
-        .modal { display:none; position:fixed; z-index:100; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.95); overflow-y:auto; padding:20px; box-sizing:border-box; text-align:left; }
-        .modal-content { background:#161b22; padding:20px; border-radius:15px; border:1px solid #30363d; line-height: 1.6; }
-        .ref-status { font-size: 11px; color: #f1c40f; margin-top: 8px; font-weight: bold; }
+        body { background: #0d1117; color: white; font-family: 'Segoe UI', sans-serif; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 20px; padding: 20px; margin-top: 15px; }
+        .xp-bar { width: 100%; height: 8px; background: #30363d; border-radius: 10px; margin: 10px 0; }
+        .xp-fill { height: 100%; background: #238636; border-radius: 10px; width: 0%; transition: 1s; }
+        .btn-main { background: linear-gradient(45deg, #0088cc, #00d4ff); border: none; font-weight: 900; padding: 18px; width: 100%; border-radius: 15px; color: white; box-shadow: 0 4px 15px rgba(0,136,204,0.3); }
+        .btn-main:disabled { opacity: 0.6; background: #30363d; }
+        .btn-daily { background: #f1c40f; color: black; font-weight: bold; border: none; border-radius: 10px; width: 100%; padding: 10px; margin-bottom: 10px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% {transform:scale(1)} 50% {transform:scale(1.03)} 100% {transform:scale(1)} }
+        #adminPanel { border: 2px solid #f1c40f; display: none; }
     </style>
 </head>
 <body>
-    <div id="adminPanel">👑 <b>ADMIN:</b> Users: <span id="a_u">0</span> | Debt: <span id="a_d">0</span> TON</div>
 
-    <button class="btn btn-info" onclick="toggleModal('infoModal')">ℹ️ HOW TO EARN & RULES</button>
-
-    <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span id="rank" style="font-size:10px; background:#238636; padding:4px 10px; border-radius:12px; font-weight:bold;">ACTIVE EARNER</span>
-            <span id="nrg">⚡ 0/10</span>
+    <div class="container py-4">
+        <div id="adminPanel" class="card">
+            <h5 class="text-warning">👑 ADMIN CONSOLE</h5>
+            <p id="admStats" class="small m-0">Loading system data...</p>
         </div>
-        <h1 id="bal" style="font-size: 42px; margin: 15px 0; font-weight: 800;">0.0000 TON</h1>
-        <div class="xp-bar"><div id="xpFill" class="xp-fill"></div></div>
-        <div style="display:flex; justify-content:space-between; font-size:11px; color:#8b949e">
-            <span>LVL <span id="lvl">1</span> (+<span id="bonus">0</span>% Bonus)</span>
-            <span>🎫 TICKETS: <span id="tix">0</span></span>
+
+        <div class="text-center">
+            <h2 class="fw-bold">💎 TON EMPIRE</h2>
+            <p class="text-muted small">Global Ad-Earning Platform</p>
         </div>
-        <button class="btn" style="background:#0088cc; height:45px; margin-top:15px;" onclick="requestWithdraw()">📤 WITHDRAW TON</button>
-        <div class="ref-status" id="refText">Referrals: 0/3 (Invite more to unlock)</div>
-    </div>
 
-    <div class="shout-container">
-        <div id="shoutbox">Connecting to Chat...</div>
-        <div style="display:flex; gap:5px;">
-            <input type="text" id="shoutInput" placeholder="Type a message..." style="flex:1; background:#222; border:none; color:white; padding:8px; border-radius:5px; font-size:12px;">
-            <button onclick="sendShout()" style="background:#0088cc; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold;">SEND</button>
+        <div class="card shadow">
+            <div class="d-flex justify-content-between small text-muted">
+                <span>LEVEL <b id="lvl" class="text-white">1</b></span>
+                <span>ENERGY: <b id="nrg" class="text-white">10/10</b></span>
+            </div>
+            <div class="xp-bar"><div id="xpFill" class="xp-fill"></div></div>
+            <h1 class="my-3"><span id="bal">0.0000</span> <small class="fs-6">TON</small></h1>
         </div>
-    </div>
 
-    <button class="btn btn-spin" id="spinBtn" onclick="runAdTimer()">🎰 WATCH AD & SPIN (15s)</button>
-    <button class="btn" style="background:#f1c40f; color:black;" onclick="ticketSpin()">🎫 GOLDEN SPIN (5x NO ADS)</button>
-    <button class="btn" style="background:#24292f" onclick="share()">🚀 INVITE FRIENDS (10% COMMISSION)</button>
+        <div class="mt-4">
+            <button class="btn-daily" onclick="claimDaily()">🎁 DAILY BONUS (+50 XP)</button>
+            <button id="spinBtn" class="btn-main" onclick="startSpin()">🎰 SPIN & EARN (15s AD)</button>
+        </div>
 
-    <div id="infoModal" class="modal">
-        <div class="modal-content">
-            <button style="float:right; background:none; border:none; color:white; font-size:28px;" onclick="toggleModal('infoModal')">✖</button>
-            <h2 style="color:#0088cc">📖 User Guide</h2>
-            <p>Welcome! Start earning real TON by following these simple rules:</p>
-            <h3>⚡ Energy & Levels</h3>
-            <p>Each spin uses 1 energy. You get <b>1 energy every 10 minutes</b>. Every spin gives 20 XP. Leveling up increases your permanent bonus by 1% per level!</p>
-            <h3>🎫 Golden Tickets</h3>
-            <p>Get <b>1 Ticket for every 3 friends</b> you invite. Tickets pay <b>5x rewards</b> and have NO waiting time.</p>
-            <h3>📤 Withdrawal Rule</h3>
-            <p>To keep the platform stable, you must invite at least <b>3 active friends</b> to unlock your first withdrawal. Min payout: 0.1 TON.</p>
+        <div class="mt-3 d-flex gap-2">
+            <button class="btn btn-outline-light w-50 py-3" onclick="share()">🔗 INVITE</button>
+            <button class="btn btn-outline-light w-50 py-3" onclick="withdraw()">💸 WITHDRAW</button>
+        </div>
+
+        <div class="mt-4 text-center small text-muted">
+            Tickets: <b id="tix" class="text-white">0</b> | 
+            Referrals: <b id="refs" class="text-white">0/3</b>
         </div>
     </div>
 
     <script>
         const tele = window.Telegram.WebApp;
-        const user = tele.initDataUnsafe.user;
-        const R_URL = "https://telegramadsbot-jzso.onrender.com"; 
+        tele.expand();
+        const user = tele.initDataUnsafe.user || {id: "5401881400", first_name: "Tester"}; // Fallback para teste
+        const R_URL = "TEU_URL_DO_RENDER"; 
+        const AD_URL = "https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
 
         async function load() {
-            const res = await (await fetch(`${R_URL}/check_eligibility?user_id=${user.id}&ref=${tele.initDataUnsafe.start_param || ""}`)).json();
-            document.getElementById('bal').innerText = res.bal.toFixed(4) + " TON";
-            document.getElementById('nrg').innerText = "⚡ " + res.energy + "/10";
-            document.getElementById('tix').innerText = res.tickets;
-            document.getElementById('lvl').innerText = res.level;
-            document.getElementById('bonus').innerText = res.level - 1;
-            document.getElementById('xpFill').style.width = (res.xp % 100) + "%";
-            
-            const refText = document.getElementById('refText');
-            if(res.refs >= 3) {
-                refText.innerText = "✅ Withdrawal Unlocked!";
-                refText.style.color = "#00ffcc";
-            } else {
-                refText.innerText = `Referrals: ${res.refs}/3 (Invite more to unlock)`;
-            }
+            try {
+                const res = await (await fetch(`${R_URL}/check_eligibility?user_id=${user.id}`)).json();
+                document.getElementById('bal').innerText = res.balance.toFixed(4);
+                document.getElementById('lvl').innerText = res.level;
+                document.getElementById('nrg').innerText = res.energy + "/10";
+                document.getElementById('tix').innerText = res.tickets;
+                document.getElementById('refs').innerText = res.ref_count + "/3";
+                document.getElementById('xpFill').style.width = (res.xp % 100) + "%";
 
-            if(user.id == "5401881400") {
-                const s = await (await fetch(`${R_URL}/admin_stats?user_id=${user.id}`)).json();
-                document.getElementById('adminPanel').style.display = 'block';
-                document.getElementById('a_u').innerText = s.users;
-                document.getElementById('a_d').innerText = s.debt;
-            }
-            loadShouts();
+                if(user.id == "5401881400") {
+                    document.getElementById('adminPanel').style.display = 'block';
+                    const adm = await (await fetch(`${R_URL}/admin_stats?user_id=${user.id}`)).json();
+                    document.getElementById('admStats').innerText = `Total Users: ${adm.total_users} | Platform Debt: ${adm.debt} TON`;
+                }
+            } catch(e) { console.error("Sync Error"); }
         }
 
-        function toggleModal(id) {
-            const m = document.getElementById(id);
-            m.style.display = (m.style.display === 'block') ? 'none' : 'block';
-        }
-
-        function runAdTimer() {
-            let sec = 15;
+        async function startSpin() {
+            window.open(AD_URL, '_blank');
             const btn = document.getElementById('spinBtn');
             btn.disabled = true;
-            const t = setInterval(async () => {
-                btn.innerText = `AD LOADING: ${sec}s`;
-                if(sec-- <= 0) {
-                    clearInterval(t);
-                    await fetch(`${R_URL}/reward_spin`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:user.id})});
-                    btn.disabled = false; btn.innerText = "🎰 WATCH AD & SPIN (15s)";
-                    load();
-                    tele.HapticFeedback.notificationOccurred('success');
+            let timer = 15;
+            
+            const interval = setInterval(() => {
+                btn.innerText = `WAITING AD... ${timer}s`;
+                if(timer-- <= 0) {
+                    clearInterval(interval);
+                    finishSpin();
                 }
             }, 1000);
         }
 
-        async function ticketSpin() {
-            const res = await fetch(`${R_URL}/reward_spin`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:user.id, use_ticket:true})});
+        async function finishSpin() {
+            const res = await fetch(`${R_URL}/reward_spin`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: user.id})
+            });
             const data = await res.json();
-            if(data.error) alert(data.error);
-            else {
-                load();
-                tele.HapticFeedback.impactOccurred('heavy');
-            }
-        }
-
-        async function requestWithdraw() {
-            const addr = prompt("Enter Your TON Wallet Address:");
-            if(!addr) return;
-            const amt = prompt("Enter Amount to Withdraw (Min 0.1):");
-            if(!amt) return;
-
-            const r = await fetch(`${R_URL}/withdraw`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:user.id, amount:amt, address:addr})});
-            const d = await r.json();
-            if(d.success) alert("Withdrawal Requested! Payout in 48-72h."); 
-            else alert("Lock: " + d.error);
+            if(data.win) tele.showConfirm(`🎉 Awesome! You earned ${data.win.toFixed(5)} TON`);
+            document.getElementById('spinBtn').innerText = "🎰 SPIN & EARN (15s AD)";
+            document.getElementById('spinBtn').disabled = false;
             load();
         }
 
-        async function loadShouts() {
-            const shouts = await (await fetch(`${R_URL}/shoutbox`)).json();
-            document.getElementById('shoutbox').innerHTML = shouts.map(m => `<div><b style="color:#0088cc;">U${m.uid.slice(-3)}:</b> ${m.msg}</div>`).join("");
-        }
-
-        async function sendShout() {
-            const i = document.getElementById('shoutInput');
-            if(!i.value.trim()) return;
-            await fetch(`${R_URL}/shoutbox`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({user_id: user.id, msg: i.value})});
-            i.value = ""; loadShouts();
+        async function claimDaily() {
+            const res = await fetch(`${R_URL}/daily_checkin`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: user.id})
+            });
+            const data = await res.json();
+            tele.showAlert(data.msg);
+            load();
         }
 
         function share() {
-            tele.switchInlineQuery(`Win real TON! Join Myearnbot2026_bot 🎰\nhttps://t.me/Myearnbot2026_bot?start=${user.id}`);
+            const text = encodeURIComponent("🎰 I'm earning real TON for free! Join the Empire: ");
+            const url = `https://t.me/Myearnbot2026_bot?start=${user.id}`;
+            tele.switchInlineQuery(`${text}\n${url}`);
         }
 
-        load(); tele.expand(); tele.ready();
+        function withdraw() {
+            tele.showAlert("Withdrawals unlock at 0.1 TON + 3 active referrals!");
+        }
+
+        load();
     </script>
 </body>
 </html>
