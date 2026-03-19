@@ -1,139 +1,23 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        :root { --gold: #f1c40f; --blue: #0088cc; --bg: #050a10; }
-        body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        .main { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .glass { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 25px; padding: 20px; text-align: center; }
-        .ton-val { font-size: 3rem; font-weight: 900; background: linear-gradient(to bottom, #fff, var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .footer { background: #0a0f16; padding: 25px; border-top: 1px solid #1a222c; border-radius: 35px 35px 0 0; }
-        .bar-bg { height: 8px; background: #111; border-radius: 10px; overflow: hidden; }
-        .energy-fill { height: 100%; background: var(--gold); box-shadow: 0 0 10px var(--gold); transition: width 0.5s; }
-        .xp-fill { height: 100%; background: #9b59b6; box-shadow: 0 0 10px #9b59b6; transition: width 0.5s; }
-        .btn-spin { background: var(--blue); border: none; padding: 18px; border-radius: 20px; width: 100%; font-weight: 800; color: white; font-size: 1.1rem; }
-        .rank-item { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 6px; border-bottom: 1px solid rgba(255,255,255,0.02); }
-        #admBadge { color: var(--gold); border: 1px solid var(--gold); padding: 5px; border-radius: 8px; font-size: 10px; display: none; margin-bottom: 10px; }
-    </style>
-</head>
-<body>
-
-<div class="main">
-    <center><div id="admBadge" onclick="showAdmin()">👑 MASTER ADMIN</div></center>
-
-    <div class="glass">
-        <div class="d-flex justify-content-between small mb-2">
-            <span class="text-secondary">LEVEL <b id="lvlVal">1</b></span>
-            <span class="text-secondary">XP: <b id="xpText">0/100</b></span>
-        </div>
-        <div class="bar-bg mb-3"><div id="xpBar" class="xp-fill" style="width: 0%"></div></div>
-        
-        <small class="text-secondary">ESTIMATED BALANCE</small>
-        <div class="ton-val" id="bal">0.0000</div>
-        <div class="bar-bg mt-2" style="height: 4px;"><div id="wdBar" style="background: #2ecc71; height: 100%; width: 0%"></div></div>
-        <small style="font-size: 9px; color: #555;">Min. Withdraw: 0.5 TON</small>
-    </div>
-
-    <div class="glass">
-        <h6 class="small text-secondary mb-3"><i class="bi bi-trophy"></i> GLOBAL RANKING</h6>
-        <div id="leaderboard"></div>
-    </div>
-</div>
-
-<div class="footer">
-    <div class="d-flex justify-content-between small mb-1">
-        <span>⚡ ENERGY</span>
-        <span id="nrgText">--/10</span>
-    </div>
-    <div class="bar-bg mb-3"><div id="nrgBar" class="energy-fill"></div></div>
-
-    <button id="spinBtn" class="btn-spin mb-3" onclick="handleSpin()">
-        <i class="bi bi-play-circle-fill"></i> SPIN & EARN (15s AD)
-    </button>
-    
-    <div class="d-flex gap-2">
-        <button class="btn btn-dark w-50 py-2" onclick="showHelp()">HELP</button>
-        <button class="btn btn-dark w-50 py-2" onclick="withdraw()">CASH</button>
-        <button class="btn btn-dark w-50 py-2" onclick="shareInvite()">INVITE</button>
-    </div>
+<div class="btn-group">
+    <button class="btn-sub" onclick="showHelp()"><i class="bi bi-info-circle"></i>HELP</button>
+    <button class="btn-sub" onclick="claimDaily()"><i class="bi bi-gift"></i>DAILY</button>
+    <button class="btn-sub" onclick="withdraw()"><i class="bi bi-wallet2"></i>CASH</button>
+    <button class="btn-sub" onclick="shareInvite()"><i class="bi bi-people"></i>INVITE</button>
 </div>
 
 <script>
-    const tele = window.Telegram.WebApp;
-    const user = tele.initDataUnsafe.user || {id: "5401881400"};
-    const R_URL = "https://telegramadsbot-jzso.onrender.com";
-    const AD_LINK = "https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
-
-    async function load() {
-        if(String(user.id) === "5401881400") document.getElementById('admBadge').style.display = 'block';
-        const r = await fetch(`${R_URL}/check_eligibility?user_id=${user.id}`);
-        updateUI(await r.json());
-        
-        const lr = await fetch(`${R_URL}/get_leaderboard`);
-        const leaders = await lr.json();
-        let html = "";
-        leaders.forEach((u, i) => {
-            html += `<div class="rank-item"><span>#${i+1} ID:${u.uid.slice(0,5)}</span><b>${u.balance.toFixed(4)}</b></div>`;
-        });
-        document.getElementById('leaderboard').innerHTML = html;
-        tele.expand();
+async function claimDaily() {
+    const res = await fetch(`${R_URL}/claim_daily`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({user_id: user.id})
+    });
+    const d = await res.json();
+    if(d.error) {
+        tele.showAlert(d.error);
+    } else {
+        tele.showAlert(d.success);
+        load(); // Atualiza o saldo no ecrã
     }
-
-    function updateUI(d) {
-        document.getElementById('bal').innerText = d.balance.toFixed(4);
-        document.getElementById('lvlVal').innerText = d.level;
-        document.getElementById('xpText').innerText = d.xp + "/100";
-        document.getElementById('xpBar').style.width = d.xp + "%";
-        document.getElementById('nrgText').innerText = d.energy + "/10";
-        document.getElementById('nrgBar').style.width = (d.energy * 10) + "%";
-        document.getElementById('wdBar').style.width = Math.min((d.balance / 0.5) * 100, 100) + "%";
-    }
-
-    function handleSpin() {
-        window.open(AD_LINK, '_blank');
-        let btn = document.getElementById('spinBtn');
-        btn.disabled = true;
-        let t = 15;
-        let timer = setInterval(async () => {
-            btn.innerHTML = `<i class="bi bi-hourglass-split"></i> WAITING ${t}s...`;
-            if(t-- <= 0) {
-                clearInterval(timer);
-                const res = await fetch(`${R_URL}/reward_spin`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({user_id: user.id})
-                });
-                updateUI(await res.json());
-                btn.disabled = false;
-                btn.innerHTML = `<i class="bi bi-play-circle-fill"></i> SPIN & EARN (15s AD)`;
-                tele.HapticFeedback.notificationOccurred('success');
-            }
-        }, 1000);
-    }
-
-    function showHelp() {
-        tele.showPopup({ title: "Rules", message: "1. Click SPIN to open AD.\n2. Wait 15s for reward.\n3. Earn 0.0002 TON + 10 XP.\n4. Level up every 100 XP.\n5. Min. Withdraw: 0.5 TON.", buttons: [{type: "close"}] });
-    }
-
-    async function withdraw() {
-        const r = await fetch(`${R_URL}/request_withdraw`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({user_id: user.id}) });
-        const d = await r.json();
-        tele.showAlert(d.error || d.success);
-    }
-
-    function shareInvite() { window.open(`https://t.me/share/url?url=https://t.me/CryptoEarnerBot?start=ref_${user.id}&text=Join and earn free TON!`); }
-
-    async function showAdmin() {
-        const r = await fetch(`${R_URL}/admin_stats?user_id=${user.id}`);
-        const d = await r.json();
-        tele.showPopup({ title: "Admin", message: `Users: ${d.total_users}\nDebt: ${d.debt.toFixed(4)} TON` });
-    }
-
-    load();
+}
 </script>
-</body>
-</html>
