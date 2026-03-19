@@ -2,65 +2,66 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TON EMPIRE</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        body { background: #0b0e14; color: white; font-family: sans-serif; }
-        .card { background: #161b22; border-radius: 15px; padding: 15px; border: 1px solid #30363d; margin-bottom: 15px; }
-        /* DESTAQUE ADMIN */
-        #adminPanel { border: 2px solid #ff4d4d; background: #2d0a0a; display: none; margin-bottom: 20px; box-shadow: 0 0 15px rgba(255, 77, 77, 0.4); }
-        .xp-bar { width: 100%; height: 8px; background: #30363d; border-radius: 5px; margin: 10px 0; }
-        .xp-fill { height: 100%; background: #238636; width: 0%; transition: 0.5s; }
-        .btn-spin { background: linear-gradient(45deg, #0088cc, #00d4ff); border: none; font-weight: bold; padding: 15px; width: 100%; border-radius: 12px; color: white; }
-        #bal { color: #f1c40f; font-size: 2.2rem; font-weight: 800; }
-        .stats-text { color: #8b949e; font-size: 0.8rem; }
+        :root { --bg: #0d1117; --card: #161b22; --text: #f0f6fc; --accent: #58a6ff; --gold: #f1c40f; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; overflow-x: hidden; }
+        .card { background: var(--card); border: 1px solid #30363d; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .stat-row { display: flex; justify-content: space-between; font-size: 14px; color: #8b949e; margin-bottom: 8px; }
+        .stat-val { color: var(--text); font-weight: bold; }
+        .xp-bar { width: 100%; height: 6px; background: #30363d; border-radius: 10px; margin: 10px 0 20px; }
+        .xp-fill { height: 100%; background: #238636; border-radius: 10px; width: 0%; transition: 1s; }
+        .balance-main { font-size: 38px; font-weight: 800; color: var(--gold); margin: 10px 0; }
+        .btn-main { background: linear-gradient(45deg, #0088cc, #00d4ff); border: none; color: white; width: 100%; padding: 18px; border-radius: 14px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-main:disabled { filter: grayscale(1); opacity: 0.5; }
+        .btn-daily { background: var(--gold); color: black; margin-bottom: 12px; padding: 12px; }
+        .grid-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .btn-sec { background: transparent; border: 1px solid #30363d; color: var(--text); padding: 12px; border-radius: 10px; font-weight: bold; }
+        #adminPanel { border: 2px solid var(--gold); display: none; margin-bottom: 15px; }
     </style>
 </head>
 <body>
-    <div class="container py-3">
-        <div id="adminPanel" class="card text-center">
-            <h6 style="color: #ff4d4d; font-weight: 900;">🚨 SYSTEM ADMIN CONSOLE</h6>
-            <div id="admStats" class="small">Connecting to database...</div>
-        </div>
 
-        <div class="text-center mb-3">
-            <h3 class="fw-bold">💎 TON EMPIRE</h3>
-        </div>
+    <div id="adminPanel" class="card">
+        <h4 style="margin:0; color:var(--gold)">👑 ADMIN PANEL</h4>
+        <p id="admStats" style="font-size:12px">Loading...</p>
+    </div>
 
-        <div class="card text-center shadow">
-            <div class="d-flex justify-content-between stats-text">
-                <span>LVL <b id="lvl" class="text-white">1</b></span>
-                <span>ENERGY <b id="nrg" class="text-white">10/10</b></span>
-            </div>
-            <div class="xp-bar"><div id="xpFill" class="xp-fill"></div></div>
-            <div id="bal">0.0000</div>
-            <span class="stats-text">TON BALANCE</span>
+    <div class="card">
+        <div class="stat-row">
+            <span>LEVEL <span id="lvl" class="stat-val">1</span></span>
+            <span>ENERGY <span id="nrg" class="stat-val">10/10</span></span>
         </div>
+        <div class="xp-bar"><div id="xpFill" class="xp-fill"></div></div>
+        <div class="balance-main"><span id="bal">0.0000</span> <small style="font-size:14px">TON</small></div>
+    </div>
 
-        <button class="btn btn-warning w-100 fw-bold mb-3" onclick="daily()">🎁 CLAIM DAILY BONUS</button>
-        <button id="spinBtn" class="btn-spin mb-3" onclick="startSpin()">🎰 SPIN & WATCH AD (15s)</button>
+    <button class="btn-main btn-daily" onclick="claimDaily()">🎁 DAILY BONUS (+50 XP)</button>
+    <button id="spinBtn" class="btn-main" onclick="startSpin()">🎰 SPIN & EARN (15s AD)</button>
 
-        <div class="d-flex gap-2">
-            <button class="btn btn-dark w-50" onclick="share()">🔗 INVITE</button>
-            <button class="btn btn-dark w-50" onclick="withdraw()">💸 WITHDRAW</button>
-        </div>
+    <div class="grid-btns">
+        <button class="btn-sec" onclick="share()">🔗 INVITE</button>
+        <button class="btn-sec" onclick="withdraw()">💸 WITHDRAW</button>
+    </div>
 
-        <div class="text-center mt-3 stats-text">
-            Tickets: <b id="tix" class="text-white">0</b> | Refs: <b id="refs" class="text-white">0/3</b>
-        </div>
+    <div style="text-align:center; margin-top:20px; font-size:12px; color:#8b949e">
+        Tickets: <b id="tix" style="color:white">0</b> | Referrals: <b id="refs" style="color:white">0/3</b>
     </div>
 
     <script>
         const tele = window.Telegram.WebApp;
         tele.expand();
         const user = tele.initDataUnsafe.user || {id: "5401881400"};
-        const R_URL = "https://ton-empire-bot.onrender.com"; // URL ATUALIZADO
+        const R_URL = "https://TEU-LINK-DO-RENDER.onrender.com"; 
         const AD_URL = "https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const ref_id = urlParams.get('ref');
+
         async function load() {
-            const res = await (await fetch(`${R_URL}/check_eligibility?user_id=${user.id}`)).json();
+            const res = await (await fetch(`${R_URL}/check_eligibility?user_id=${user.id}&ref=${ref_id || ""}`)).json();
             document.getElementById('bal').innerText = res.balance.toFixed(4);
             document.getElementById('lvl').innerText = res.level;
             document.getElementById('nrg').innerText = res.energy + "/10";
@@ -68,42 +69,48 @@
             document.getElementById('refs').innerText = res.ref_count + "/3";
             document.getElementById('xpFill').style.width = (res.xp % 100) + "%";
 
-            // LÓGICA DE EXIBIÇÃO DO ADMIN
-            if(String(user.id) === "5401881400") {
+            if(user.id == "5401881400") {
                 document.getElementById('adminPanel').style.display = 'block';
                 const adm = await (await fetch(`${R_URL}/admin_stats?user_id=${user.id}`)).json();
-                document.getElementById('admStats').innerHTML = `Users: <b>${adm.total_users}</b> | Debt: <b>${adm.debt.toFixed(4)} TON</b>`;
+                document.getElementById('admStats').innerText = `Users: ${adm.total_users} | Platform Debt: ${adm.debt.toFixed(2)} TON`;
             }
         }
 
-        function startSpin() {
+        async function startSpin() {
             window.open(AD_URL, '_blank');
             const btn = document.getElementById('spinBtn');
             btn.disabled = true;
-            let sec = 15;
-            const t = setInterval(async () => {
-                btn.innerText = `WAITING... ${sec}s`;
-                if(sec-- <= 0) {
-                    clearInterval(t);
-                    const r = await fetch(`${R_URL}/reward_spin`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({user_id: user.id})
-                    });
-                    btn.disabled = false;
-                    btn.innerText = "🎰 SPIN & WATCH AD (15s)";
-                    load();
+            let timer = 15;
+            const clock = setInterval(() => {
+                btn.innerText = `WAITING AD... ${timer}s`;
+                if(timer-- <= 0) {
+                    clearInterval(clock);
+                    finishSpin();
                 }
             }, 1000);
         }
 
-        async function daily() {
-            const r = await fetch(`${R_URL}/daily_checkin`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({user_id: user.id})});
-            const d = await r.json(); tele.showAlert(d.msg); load();
+        async function finishSpin() {
+            const res = await fetch(`${R_URL}/reward_spin`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: user.id})
+            });
+            const data = await res.json();
+            if(data.win) tele.showConfirm(`🎉 Won ${data.win.toFixed(5)} TON!`);
+            document.getElementById('spinBtn').innerText = "🎰 SPIN & EARN (15s AD)";
+            document.getElementById('spinBtn').disabled = false;
+            load();
         }
 
-        function share() { tele.switchInlineQuery(`Join TON Empire!\nhttps://t.me/Myearnbot2026_bot?start=${user.id}`); }
-        function withdraw() { tele.showAlert("Minimum: 0.1 TON + 3 Referrals."); }
+        function share() {
+            const url = `https://t.me/Myearnbot2026_bot?start=${user.id}`;
+            tele.switchInlineQuery(`🎰 Earn real TON! Level up and win: \n${url}`);
+        }
+
+        function withdraw() {
+            tele.showAlert("Withdraw unlocks at 0.1 TON and 3 active referrals!");
+        }
 
         load();
     </script>
