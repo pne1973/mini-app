@@ -1,39 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TON EMPIRE</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
         body { background: #0d1117; color: white; text-align: center; padding: 20px; }
-        .card { background: #161b22; border: 1px solid #30363d; border-radius: 20px; padding: 20px; }
-        .btn-main { background: #0088cc; border: none; padding: 15px; width: 100%; border-radius: 12px; color: white; font-weight: bold; }
-        #adminPanel { border: 2px solid #f1c40f; display: none; margin-bottom: 15px; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 15px; padding: 15px; margin-bottom: 10px; }
+        .btn-main { background: #0088cc; border: none; padding: 15px; width: 100%; border-radius: 10px; color: white; font-weight: bold; }
+        #adminPanel { border: 2px solid #f1c40f; display: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="adminPanel" class="card">👑 MASTER ADMIN ONLINE</div>
-
-    <div class="card">
-        <div class="d-flex justify-content-between small">
-            <span>LVL: <b id="lvl">1</b></span>
-            <span>⚡ ENERGY: <b id="nrg">10/10</b></span>
-        </div>
-        <h1 class="my-3"><span id="bal">0.0000</span> <small class="fs-6">TON</small></h1>
-        <button id="spinBtn" class="btn-main" onclick="startSpin()">🎰 SPIN & EARN (15s AD)</button>
+    <div id="adminPanel" class="card" onclick="showAdminStats()">
+        <h6 style="color:#f1c40f; margin:0;">👑 MASTER ADMIN ONLINE</h6>
+        <small>Clique para ver estatísticas</small>
     </div>
+
+    <div class="card mt-3">
+        <div class="d-flex justify-content-between small text-muted">
+            <span>LVL: <b id="lvl">1</b></span>
+            <span>⚡ ENERGIA: <b id="nrg">10/10</b></span>
+        </div>
+        <h1 class="mt-2"><span id="bal">0.0000</span> <small class="fs-6">TON</small></h1>
+    </div>
+
+    <button id="spinBtn" class="btn-main mt-3" onclick="startSpin()">🎰 SPIN & EARN (15s AD)</button>
 
     <script>
         const tele = window.Telegram.WebApp;
-        tele.ready();
-        tele.expand();
-
+        tele.ready(); tele.expand();
         const user = tele.initDataUnsafe.user || {id: "5401881400"};
-        const R_URL = "https://telegramadsbot-jzso.onrender.com"; // Teu link do Render
-        const AD_URL = "https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
+        const R_URL = "https://telegramadsbot-jzso.onrender.com";
 
         async function load() {
             if (String(user.id) === "5401881400") document.getElementById('adminPanel').style.display = 'block';
@@ -43,32 +43,33 @@
                 document.getElementById('bal').innerText = data.balance.toFixed(4);
                 document.getElementById('lvl').innerText = data.level;
                 document.getElementById('nrg').innerText = data.energy + "/10";
-            } catch (e) { console.log("Erro de rede."); }
+            } catch (e) { console.error(e); }
+        }
+
+        async function showAdminStats() {
+            const res = await fetch(`${R_URL}/admin_stats?user_id=${user.id}`);
+            const data = await res.json();
+            tele.showAlert(`📊 STATUS GLOBAL:\n\nUsers: ${data.total_users}\nDívida: ${data.debt.toFixed(4)} TON`);
         }
 
         async function startSpin() {
-            window.open(AD_URL, '_blank');
+            window.open("https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af", "_blank");
             const btn = document.getElementById('spinBtn');
             btn.disabled = true;
-            let timer = 15;
-            const interval = setInterval(() => {
-                btn.innerText = `WAITING... ${timer}s`;
-                if (timer-- <= 0) {
-                    clearInterval(interval);
-                    finish();
+            let time = 15;
+            const timer = setInterval(async () => {
+                btn.innerText = `AGUARDE... ${time}s`;
+                if (time-- <= 0) {
+                    clearInterval(timer);
+                    await fetch(`${R_URL}/reward_spin`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({user_id: user.id})
+                    });
+                    btn.disabled = false; btn.innerText = "🎰 SPIN & EARN (15s AD)";
+                    load();
                 }
             }, 1000);
-        }
-
-        async function finish() {
-            await fetch(`${R_URL}/reward_spin`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: user.id})
-            });
-            document.getElementById('spinBtn').disabled = false;
-            document.getElementById('spinBtn').innerText = "🎰 SPIN & EARN (15s AD)";
-            load();
         }
         load();
     </script>
