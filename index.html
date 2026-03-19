@@ -6,95 +6,86 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #0d1117; color: white; text-align: center; padding: 20px; margin:0; }
-        .card { background: #161b22; border-radius: 16px; padding: 20px; border: 1px solid #30363d; margin-bottom: 20px; }
-        .xp-bar { width: 100%; height: 8px; background: #333; border-radius: 4px; margin: 10px 0; overflow: hidden; }
-        .xp-fill { height: 100%; background: linear-gradient(90deg, #0088cc, #00ffcc); width: 0%; transition: width 0.5s ease; }
-        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin: 8px 0; font-size: 16px; transition: 0.1s; }
-        .btn:active { transform: scale(0.98); }
-        .btn-spin { background: #238636; color: white; box-shadow: 0 4px 15px rgba(35, 134, 54, 0.3); }
-        .btn-vip { background: #f1c40f; color: black; }
-        .badge { font-size: 10px; background: #30363d; padding: 4px 8px; border-radius: 10px; color: #8b949e; text-transform: uppercase; font-weight: bold; }
+        body { font-family: sans-serif; background: #0d1117; color: white; text-align: center; padding: 15px; }
+        .card { background: #161b22; border-radius: 15px; padding: 15px; border: 1px solid #30363d; margin-bottom: 15px; }
+        .xp-bar { width: 100%; height: 6px; background: #333; border-radius: 3px; margin: 10px 0; overflow: hidden; }
+        .xp-fill { height: 100%; background: #0088cc; width: 0%; transition: 0.5s; }
+        .btn { width: 100%; padding: 14px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; margin: 5px 0; }
+        .btn-spin { background: #238636; color: white; }
+        .btn-gold { background: #f1c40f; color: black; }
+        .shoutbox { font-size: 11px; background: #000; padding: 5px; border-radius: 5px; height: 50px; overflow: hidden; color: #00ffcc; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div id="ton-connect" style="display:flex; justify-content:flex-end; margin-bottom:10px;"></div>
-
+    <div id="ton-connect" style="display:flex; justify-content:flex-end;"></div>
+    
     <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span id="rank" class="badge">NOVICE</span>
-            <span id="nrg" style="font-size: 13px; font-weight:bold;">⚡ 0/10</span>
+        <div style="display:flex; justify-content:space-between; font-size:12px;">
+            <span id="rank" style="color:#8b949e">NOVICE</span>
+            <span id="nrg">⚡ 0/10</span>
         </div>
-        <div style="color: #8b949e; font-size: 11px; margin-top: 15px;">WALLET BALANCE</div>
-        <h1 id="bal" style="font-size: 40px; margin: 10px 0;">0.0000 TON</h1>
+        <h1 id="bal">0.0000 TON</h1>
         <div class="xp-bar"><div id="xpFill" class="xp-fill"></div></div>
-        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #8b949e;">
-            <span>Level <span id="lvl">1</span></span>
-            <span id="status">Free Member</span>
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:#8b949e">
+            <span>LVL <span id="lvl">1</span></span>
+            <span>TICKETS: <span id="tix">0</span> 🎫</span>
         </div>
+        <div class="shoutbox" id="shout">Loading Live Shoutbox...</div>
     </div>
 
-    <button class="btn btn-spin" onclick="spin()">🎰 WATCH AD & SPIN</button>
-    <button class="btn btn-vip" id="vipBtn" onclick="buyVIP()">👑 ACTIVATE VIP (0.5 TON)</button>
-    <button class="btn" style="background: #24292f;" onclick="share()">🚀 INVITE FRIENDS (10% BONUS)</button>
+    <button class="btn btn-spin" id="spinBtn" onclick="startAdSpin()">🎰 WATCH AD & SPIN (15s)</button>
+    <button class="btn btn-gold" onclick="ticketSpin()">🎫 USE GOLDEN TICKET (5x WIN)</button>
+    <button class="btn" style="background:#24292f" onclick="share()">🚀 SHARE FOR +5 ENERGY</button>
+    <button class="btn" style="background:#0088cc" onclick="openLeaderboard()">🏆 LEADERBOARD</button>
 
     <script>
         const tele = window.Telegram.WebApp;
         const user = tele.initDataUnsafe.user;
-        const R_URL = "https://your-render-app.onrender.com"; // ⚠️ UPDATE THIS
-        const AD_LINK = "https://peltas.com/130103/1781442"; // ⚠️ YOUR AD LINK
-        const WALLET = "UQCkenPqCgi46HS7KggGr_yHYFcPR6qC7gZnY7A-aC2aioS-";
-
-        const tonConnectUI = new TONConnectUI.TonConnectUI({
-            manifestUrl: 'https://pne1973.github.io/mini-app/tonconnect-manifest.json', 
-            buttonRootId: 'ton-connect'
-        });
+        const R_URL = "https://your-app.onrender.com";
+        const AD_LINK = "https://peltas.com/130103/1781442";
 
         async function load() {
-            const ref = tele.initDataUnsafe.start_param || "";
-            const res = await (await fetch(`${R_URL}/check_eligibility?user_id=${user.id}&ref=${ref}`)).json();
-            
+            const res = await (await fetch(`${R_URL}/check_eligibility?user_id=${user.id}&ref=${tele.initDataUnsafe.start_param || ""}`)).json();
             document.getElementById('bal').innerText = res.bal.toFixed(4) + " TON";
             document.getElementById('nrg').innerText = "⚡ " + res.energy + "/10";
+            document.getElementById('tix').innerText = res.tickets;
             document.getElementById('lvl').innerText = res.level;
             document.getElementById('xpFill').style.width = (res.xp % 100) + "%";
             
-            if(res.is_vip) {
-                document.getElementById('status').innerText = "VIP MEMBER 👑";
-                document.getElementById('vipBtn').style.display = "none";
-            }
-            const ranks = ["Novice", "Earner", "Hustler", "Whale", "King"];
-            document.getElementById('rank').innerText = ranks[Math.min(Math.floor(res.level/5), 4)].toUpperCase();
+            // Load Shoutbox
+            const s = await (await fetch(`${R_URL}/shoutbox`)).json();
+            document.getElementById('shout').innerHTML = s.map(m => `<div>User${m.uid.slice(-3)}: ${m.msg}</div>`).join("");
         }
 
-        async function spin() {
-            tele.HapticFeedback.notificationOccurred('success');
-            window.open(AD_LINK, "_blank"); 
-            const res = await fetch(`${R_URL}/reward_spin`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user_id: user.id })
-            });
-            const data = await res.json();
-            if(data.leveled_up) tele.showAlert("LEVEL UP! 🚀 Earnings increased.");
-            load();
+        function startAdSpin() {
+            window.open(AD_LINK, "_blank");
+            let sec = 15;
+            const btn = document.getElementById('spinBtn');
+            btn.disabled = true;
+            const timer = setInterval(async () => {
+                btn.innerText = `WAIT ${sec}s...`;
+                if(sec-- < 0) {
+                    clearInterval(timer);
+                    await fetch(`${R_URL}/reward_spin`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:user.id})});
+                    btn.disabled = false; btn.innerText = "🎰 WATCH AD & SPIN (15s)";
+                    load();
+                }
+            }, 1000);
         }
 
-        async function buyVIP() {
-            const tx = { validUntil: Math.floor(Date.now()/1000)+600, messages: [{ address: WALLET, amount: "500000000" }] };
-            try { await tonConnectUI.sendTransaction(tx); tele.showAlert("Payment Sent!"); }
-            catch(e) { tele.showAlert("Canceled"); }
+        async function ticketSpin() {
+            const res = await fetch(`${R_URL}/reward_spin`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:user.id, use_ticket:true})});
+            const d = await res.json();
+            if(d.error) tele.showAlert("No Golden Tickets!");
+            else load();
         }
 
         function share() {
-            const botName = "MyEarn_Bot"; // ⚠️ YOUR BOT NAME
-            const link = `https://t.me/${botName}?start=${user.id}`;
-            tele.switchInlineQuery(`Win real TON for free! 🎰 Join me here:\n${link}`);
+            tele.switchInlineQuery(`Win TON! Join me: https://t.me/YourBot?start=${user.id}`);
+            // Logic to grant +5 energy can be added to backend /share endpoint
         }
 
-        load();
-        tele.ready();
-        tele.expand();
+        load(); tele.expand(); tele.ready();
     </script>
 </body>
 </html>
