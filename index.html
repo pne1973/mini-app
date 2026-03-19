@@ -2,34 +2,202 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        body { background: #050a10; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; }
-        .card-main { background: linear-gradient(145deg, #0d1621, #162230); border: 1px solid #30363d; border-radius: 25px; padding: 30px; margin-top: 20px; }
-        .ton-text { font-size: 3.5rem; font-weight: 800; color: #f1c40f; text-shadow: 0 0 15px rgba(241,196,15,0.3); }
-        .btn-spin { background: #0088cc; border: none; padding: 20px; border-radius: 15px; width: 100%; font-weight: bold; font-size: 1.2rem; transition: 0.3s; }
-        .btn-spin:disabled { background: #1b2733; color: #4e5c6d; }
-        #admPanel { border: 1px solid #f1c40f; color: #f1c40f; padding: 10px; border-radius: 12px; display: none; cursor: pointer; margin-bottom: 20px; }
+        :root {
+            --tg-theme-bg: #0a0e14;
+            --gold: #f1c40f;
+            --blue: #0088cc;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--tg-theme-bg);
+            background: radial-gradient(circle at top, #1a2a3a 0%, #0a0e14 100%);
+            color: white;
+            font-family: 'Inter', -apple-system, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Admin Badge */
+        .admin-badge {
+            background: linear-gradient(45deg, var(--gold), #d4ac0d);
+            color: #000;
+            font-size: 10px;
+            font-weight: 900;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 10px;
+            box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
+            display: none;
+        }
+
+        /* Balance Section */
+        .balance-container {
+            margin-top: 20px;
+            padding: 40px 20px;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .balance-label {
+            color: #888;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .ton-value {
+            font-size: 48px;
+            font-weight: 800;
+            color: #fff;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .ton-logo {
+            width: 40px;
+            height: 40px;
+            filter: drop-shadow(0 0 8px var(--blue));
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.03);
+            padding: 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .energy-bar-bg {
+            height: 6px;
+            background: #222;
+            border-radius: 10px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .energy-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f1c40f, #ffeb3b);
+            width: 100%;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px var(--gold);
+        }
+
+        /* Main Button */
+        .btn-play {
+            background: linear-gradient(180deg, #00a2ff 0%, #0066cc 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 22px;
+            width: 100%;
+            color: white;
+            font-weight: 800;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 10px 20px rgba(0, 102, 204, 0.3), inset 0 2px 5px rgba(255,255,255,0.4);
+            transition: all 0.2s active;
+            margin-top: 10px;
+        }
+
+        .btn-play:active {
+            transform: scale(0.96);
+            box-shadow: 0 5px 10px rgba(0, 102, 204, 0.2);
+        }
+
+        .btn-play:disabled {
+            background: #2c3e50;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+
+        /* Secondary Buttons */
+        .action-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-sec {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        .processing { animation: pulse 1s infinite; }
+
     </style>
 </head>
-<body class="p-3">
+<body class="container">
 
-    <div id="admPanel" onclick="showAdmin()">👑 COMMAND CENTER (ADMIN)</div>
+    <div class="text-center pt-4">
+        <div id="admBadge" class="admin-badge" onclick="showAdmin()">
+            <i class="bi bi-shield-lock-fill"></i> Command Center
+        </div>
 
-    <div class="card-main">
-        <small class="text-secondary">ESTIMATED EARNINGS</small>
-        <div class="ton-text" id="bal">0.0000</div>
-        <div class="badge bg-primary">TON COIN</div>
+        <div class="balance-container">
+            <div class="balance-label">Total Balance</div>
+            <div class="ton-value">
+                <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg" class="ton-logo" alt="TON">
+                <span id="bal">0.0000</span>
+            </div>
+            <div class="badge rounded-pill" style="background: var(--blue)">TON NETWORK</div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="small text-secondary text-uppercase">Energy</div>
+                <div class="energy-bar-bg">
+                    <div id="nrgBar" class="energy-bar-fill"></div>
+                </div>
+                <div class="mt-1 small" id="nrgText">10/10</div>
+            </div>
+            <div class="stat-card">
+                <div class="small text-secondary text-uppercase">Experience</div>
+                <div class="mt-1 fw-bold">LVL <span id="lvl">1</span></div>
+            </div>
+        </div>
+
+        <button id="spinBtn" class="btn-play" onclick="handleSpin()">
+            <i class="bi bi-slot-machine"></i> Spin & Earn
+        </button>
+
+        <div class="action-row">
+            <button class="btn-sec"><i class="bi bi-people-fill"></i> Invite</button>
+            <button class="btn-sec"><i class="bi bi-wallet2"></i> Withdraw</button>
+        </div>
     </div>
-
-    <div class="d-flex justify-content-around my-4">
-        <div>⚡ Energy: <b id="nrg">--</b></div>
-        <div>⭐ Level: <b id="lvl">--</b></div>
-    </div>
-
-    <button id="spinBtn" class="btn-spin" onclick="handleSpin()">🎰 SPIN & WATCH AD</button>
 
     <script>
         const tele = window.Telegram.WebApp;
@@ -38,26 +206,33 @@
         const AD_LINK = "https://www.profitablecpmratenetwork.com/hik7av4u?key=a5a57d96e63b358a8e7549b51cab45af";
 
         async function load() {
-            if(String(user.id) === "5401881400") document.getElementById('admPanel').style.display = 'block';
+            if(String(user.id) === "5401881400") document.getElementById('admBadge').style.display = 'inline-block';
             const r = await fetch(`${R_URL}/check_eligibility?user_id=${user.id}`);
             const d = await r.json();
             updateUI(d);
             tele.expand();
+            tele.headerColor = "#1a2a3a";
         }
 
         function updateUI(d) {
             document.getElementById('bal').innerText = d.balance.toFixed(4);
-            document.getElementById('nrg').innerText = d.energy + "/10";
             document.getElementById('lvl').innerText = d.level;
+            
+            // Update Energy Bar
+            const nrgPerc = (d.energy / 10) * 100;
+            document.getElementById('nrgBar').style.width = nrgPerc + "%";
+            document.getElementById('nrgText').innerText = d.energy + "/10";
         }
 
         function handleSpin() {
             window.open(AD_LINK, '_blank');
             let btn = document.getElementById('spinBtn');
             btn.disabled = true;
+            btn.classList.add('processing');
+            
             let count = 15;
             let timer = setInterval(async () => {
-                btn.innerText = `PROCESSING... ${count}s`;
+                btn.innerHTML = `<i class="bi bi-hourglass-split"></i> Processing ${count}s`;
                 if(count-- <= 0) {
                     clearInterval(timer);
                     const r = await fetch(`${R_URL}/reward_spin`, {
@@ -68,7 +243,9 @@
                     const d = await r.json();
                     updateUI(d);
                     btn.disabled = false;
-                    btn.innerText = "🎰 SPIN & WATCH AD";
+                    btn.classList.remove('processing');
+                    btn.innerHTML = `<i class="bi bi-slot-machine"></i> Spin & Earn`;
+                    tele.HapticFeedback.notificationOccurred('success');
                 }
             }, 1000);
         }
@@ -76,7 +253,11 @@
         async function showAdmin() {
             const r = await fetch(`${R_URL}/admin_stats?user_id=${user.id}`);
             const d = await r.json();
-            tele.showPopup({ title: "Admin Center", message: `Total Users: ${d.total_users}\nTotal Debt: ${d.debt.toFixed(4)} TON` });
+            tele.showPopup({
+                title: "👑 Master Control",
+                message: `Active Miners: ${d.total_users}\nSystem Debt: ${d.debt.toFixed(4)} TON`,
+                buttons: [{type: "close"}]
+            });
         }
 
         load();
